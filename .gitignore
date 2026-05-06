@@ -3,3 +3,4 @@ generators/
 __pycache__/  
 *.pyc 
 *.html 
+card_engine_orig.py

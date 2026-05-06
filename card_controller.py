@@ -228,6 +228,14 @@ def get_index_html():
                     filters[key].push(input.value);
                 });
 
+                if (DATASETS[name].filters) {
+                    for (const key in filters) {
+                        if (DATASETS[name].filters[key] && filters[key].length === DATASETS[name].filters[key].length) {
+                            delete filters[key];
+                        }
+                    }
+                }
+
                 payload.datasets.push({ name, file, filters });
             });
 

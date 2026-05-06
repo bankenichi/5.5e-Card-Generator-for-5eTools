@@ -876,6 +876,8 @@ def generate_html(payload, output_html_path=None):
     prop_map = {}
     item_entry_dict = {}
 
+    all_raw_global = []
+
     datasets_req = payload.get('datasets', [])
     if not datasets_req: return {"card_count": 0}
 
@@ -898,6 +900,7 @@ def generate_html(payload, output_html_path=None):
         magic_items = get_dataset_items(magic_file) if os.path.exists(magic_file) else []
 
         all_raw = raw_items + base_items + magic_items
+        all_raw_global.extend(all_raw)
 
         # --- GENERIC SUPPLEMENTAL DATA BUILDER ---
         supplemental_data = {}
@@ -1078,19 +1081,28 @@ def generate_html(payload, output_html_path=None):
         # Items are already deduplicated per-dataset; this merges across datasets
         # (e.g. Spells + Items both selected) using source priority.
         source = item.get('source', '')
+        origin_file = item.get('_origin_file', '')
+        dedup_key = f"{origin_file}_{name_key}"
+        
         current_priority = get_source_priority(source)
-        if name_key not in unique_items or current_priority < get_source_priority(unique_items[name_key].get('source', '')):
-            unique_items[name_key] = route_and_enrich(item, base_data_list, type_map, prop_map, raw_dict, all_raw)
+        if dedup_key not in unique_items or current_priority < get_source_priority(unique_items[dedup_key].get('source', '')):
+            enriched = route_and_enrich(item, base_data_list, type_map, prop_map, raw_dict, all_raw_global)
+            if isinstance(enriched, dict) and '_origin_file' not in enriched:
+                enriched['_origin_file'] = origin_file
+            unique_items[dedup_key] = enriched
     
     grouped_items = {}
     for item in unique_items.values():
         base_name, variant_key, variant_type = extract_variant_name(item.get('name', 'Unknown'))
         base_key = base_name.lower().strip()
-        if base_key not in grouped_items: grouped_items[base_key] = {'variants': {}, 'base': None, 'variant_type': None}
+        origin_file = item.get('_origin_file', '')
+        group_key = f"{origin_file}_{base_key}"
+        
+        if group_key not in grouped_items: grouped_items[group_key] = {'variants': {}, 'base': None, 'variant_type': None}
         if variant_type:
-            grouped_items[base_key]['variants'][variant_key] = item
-            if grouped_items[base_key]['variant_type'] is None: grouped_items[base_key]['variant_type'] = variant_type
-        else: grouped_items[base_key]['base'] = item
+            grouped_items[group_key]['variants'][variant_key] = item
+            if grouped_items[group_key]['variant_type'] is None: grouped_items[group_key]['variant_type'] = variant_type
+        else: grouped_items[group_key]['base'] = item
         
     condensed_items = []
     for group in grouped_items.values():
@@ -1132,6 +1144,8 @@ def generate_html(payload, output_html_path=None):
     seen_titles, final_list = set(), []
     for item in condensed_items:
         tk = str(item.get('name', '')).strip().lower()
+        origin_file = item.get('_origin_file', '')
+        unique_tk = f"{origin_file}_{tk}"
         
         de = item.get('entries', [])
         flat_de = flatten_entries(de)
@@ -1142,8 +1156,8 @@ def generate_html(payload, output_html_path=None):
         if not txt_dummy and not has_table:
             continue
             
-        if tk and tk not in seen_titles and not entry_is_placeholder(item.get('entries', [])):
-            seen_titles.add(tk)
+        if unique_tk and unique_tk not in seen_titles and not entry_is_placeholder(item.get('entries', [])):
+            seen_titles.add(unique_tk)
             final_list.append(item)
             
     condensed_items = final_list
