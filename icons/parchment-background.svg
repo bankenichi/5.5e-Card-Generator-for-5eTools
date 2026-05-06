@@ -1,0 +1,36 @@
+<svg xmlns="http://www.w3.org/2000/svg"
+     viewBox="0 0 750 1050"
+     width="2.5in" height="3.5in">
+  <defs>
+    <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" stop-color="#f0dda8" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#a07830" stop-opacity="0.55"/>
+    </radialGradient>
+    <radialGradient id="center-light" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#fdf0cc" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#c8a050" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="paper-noise" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.4 0.3" numOctaves="4" seed="2" stitchTiles="stitch" result="noise"/>
+      <feColorMatrix type="saturate" values="0" in="noise" result="gray-noise"/>
+      <feBlend in="SourceGraphic" in2="gray-noise" mode="multiply" result="blended"/>
+      <feComposite in="blended" in2="SourceGraphic" operator="in"/>
+    </filter>
+  </defs>
+  <!-- Base parchment -->
+  <rect width="750" height="1050" rx="24" fill="#dfc882"/>
+  <rect width="750" height="1050" rx="24" fill="#cba94a" opacity="0.25"/>
+  <rect width="750" height="1050" rx="24" fill="url(#center-light)"/>
+  <rect width="750" height="1050" rx="24" fill="url(#vignette)"/>
+  <rect width="750" height="1050" rx="24" fill="#b89040" opacity="0.08" filter="url(#paper-noise)"/>
+  <!-- Outer border -->
+  <rect x="18" y="18" width="714" height="1014" rx="18" fill="none" stroke="#7a5c28" stroke-width="3.5" opacity="0.55"/>
+  <!-- Inner border -->
+  <rect x="28" y="28" width="694" height="994" rx="14" fill="none" stroke="#7a5c28" stroke-width="1.4" opacity="0.3"/>
+  <!-- Age spots -->
+  <ellipse cx="100" cy="160" rx="42" ry="24" fill="#b08030" opacity="0.06"/>
+  <ellipse cx="650" cy="890" rx="52" ry="28" fill="#906820" opacity="0.07"/>
+  <ellipse cx="680" cy="200" rx="28" ry="18" fill="#c09040" opacity="0.05"/>
+  <ellipse cx="70" cy="820" rx="36" ry="22" fill="#a07030" opacity="0.06"/>
+  <ellipse cx="375" cy="950" rx="60" ry="15" fill="#907020" opacity="0.04"/>
+</svg>
