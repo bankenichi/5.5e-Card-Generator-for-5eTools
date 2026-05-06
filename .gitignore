@@ -2,3 +2,4 @@ python-env/
 generators/  
 __pycache__/  
 *.pyc 
+*.html 

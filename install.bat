@@ -5,15 +5,16 @@ echo ==============================================
 echo 5.5e Card Generator Installer
 echo ==============================================
 
+:: Updated to target Python 3.14.1
 set "PYTHON_DIR=%CD%\python-env"
-set "PYTHON_ZIP=python-3.11.9-embed-amd64.zip"
-set "PYTHON_URL=https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd64.zip"
+set "PYTHON_ZIP=python-3.14.1-embed-amd64.zip"
+set "PYTHON_URL=https://www.python.org/ftp/python/3.14.1/python-3.14.1-embed-amd64.zip"
 set "GET_PIP_URL=https://bootstrap.pypa.io/get-pip.py"
 
 echo.
 echo [1/4] Setting up standalone Python environment...
 IF NOT EXIST "%PYTHON_DIR%\python.exe" (
-    echo Downloading Portable Python 3.11...
+    echo Downloading Portable Python 3.14...
     powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('%PYTHON_URL%', '%PYTHON_ZIP%')"
     
     echo Extracting Python...
@@ -23,9 +24,12 @@ IF NOT EXIST "%PYTHON_DIR%\python.exe" (
     echo Cleaning up zip file...
     del "%PYTHON_ZIP%"
 
-    echo Enabling site-packages...
-    :: Uncomment import site in python311._pth to allow pip and external modules
-    powershell -Command "(Get-Content '%PYTHON_DIR%\python311._pth') -replace '#import site', 'import site' | Set-Content '%PYTHON_DIR%\python311._pth'"
+    echo Enabling site-packages and local imports...
+    :: Uncomment import site in python314._pth to allow pip and external modules
+    powershell -Command "(Get-Content '%PYTHON_DIR%\python314._pth') -replace '#import site', 'import site' | Set-Content '%PYTHON_DIR%\python314._pth'"
+    
+    :: Allow embedded python to read modules from the parent directory
+    echo .. >> "%PYTHON_DIR%\python314._pth"
 
     echo Downloading get-pip.py...
     powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('%GET_PIP_URL%', 'get-pip.py')"
@@ -37,6 +41,12 @@ IF NOT EXIST "%PYTHON_DIR%\python.exe" (
     del get-pip.py
 ) ELSE (
     echo Standalone Python environment already exists.
+    :: Ensure the path fix exists even if Python was already installed
+    findstr /c:".." "%PYTHON_DIR%\python314._pth" >nul
+    if errorlevel 1 (
+        echo Adding local import path to existing Python environment...
+        echo .. >> "%PYTHON_DIR%\python314._pth"
+    )
 )
 
 echo.
