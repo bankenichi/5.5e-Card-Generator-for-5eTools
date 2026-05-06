@@ -11,7 +11,7 @@ set "PYTHON_URL=https://www.python.org/ftp/python/3.11.9/python-3.11.9-embed-amd
 set "GET_PIP_URL=https://bootstrap.pypa.io/get-pip.py"
 
 echo.
-echo [1/3] Setting up standalone Python environment...
+echo [1/4] Setting up standalone Python environment...
 IF NOT EXIST "%PYTHON_DIR%\python.exe" (
     echo Downloading Portable Python 3.11...
     powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('%PYTHON_URL%', '%PYTHON_ZIP%')"
@@ -40,7 +40,25 @@ IF NOT EXIST "%PYTHON_DIR%\python.exe" (
 )
 
 echo.
-echo [2/3] Installing dependencies...
+echo [2/4] Downloading Generator files...
+IF NOT EXIST "card_engine.py" (
+    echo Cloning 5.5e Card Generator repository...
+    git clone https://github.com/bankenichi/5.5e-Card-Generator-for-5eTools temp_gen
+    IF !ERRORLEVEL! NEQ 0 (
+        echo Failed to clone the generator repository! Please ensure git is installed.
+        pause
+        exit /b 1
+    )
+    echo Moving files to main directory...
+    rmdir /s /q "temp_gen\.git" 2>nul
+    xcopy /s /e /y "temp_gen\*" "%CD%\" >nul
+    rmdir /s /q "temp_gen"
+) ELSE (
+    echo Generator files already present.
+)
+
+echo.
+echo [3/4] Installing dependencies...
 IF EXIST "requirements.txt" (
     "%PYTHON_DIR%\python.exe" -m pip install --upgrade pip >nul 2>&1
     "%PYTHON_DIR%\python.exe" -m pip install -r requirements.txt
@@ -49,11 +67,11 @@ IF EXIST "requirements.txt" (
 )
 
 echo.
-echo [3/3] Setting up 5etools dataset...
+echo [4/4] Setting up 5etools dataset...
 IF NOT EXIST "generators" mkdir generators
 IF NOT EXIST "generators\5etools" (
     echo Cloning 5etools repository...
-    git clone https://github.com/5etools-mirror-1/5etools-src.git generators\5etools
+    git clone https://github.com/5etools-mirror-3/5etools-src.git generators\5etools
     IF !ERRORLEVEL! NEQ 0 (
         echo Failed to clone 5etools! Please ensure git is installed and accessible.
         pause
