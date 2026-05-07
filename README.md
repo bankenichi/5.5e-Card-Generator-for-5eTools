@@ -64,3 +64,6 @@ Make sure you ran `install.bat` completely. If you are updating from an older ve
 
 **Cards are clipping or overflowing:**
 The engine attempts to auto-scale fonts, but very dense tables might still push limits. Check the generated HTML to see how the engine chunked the data.
+
+**Tips, if you feel like it:**
+ko-fi.com/bankenichi
