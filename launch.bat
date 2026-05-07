@@ -12,6 +12,14 @@ IF NOT EXIST "%PYTHON_DIR%\python.exe" (
     exit /b 1
 )
 
+:: Update Card Generator repository
+echo Checking for Card Generator updates...
+IF EXIST ".git" (
+    git pull
+) ELSE (
+    echo Warning: Card Generator repository not found. Please run install.bat first!
+)
+
 :: Update 5etools repository
 echo Checking for 5etools dataset updates...
 IF EXIST "generators\5etools\.git" (

@@ -82,6 +82,7 @@ def get_index_html():
 
         const DATASETS = {
             "Actions": { file: "generators/5etools/data/actions.json", filters: {} },
+            "Backgrounds": { file: "generators/5etools/data/backgrounds.json", filters: {} },
             "Bastions": { file: "generators/5etools/data/bastions.json", filters: { level: ["5", "9", "13", "17"] } },
             "Classes": { 
                 file: ["generators/5etools/data/class/index.json", "generators/5etools/data/optionalfeatures.json"], 
@@ -120,7 +121,7 @@ def get_index_html():
             "Psionics": { file: "generators/5etools/data/psionics.json", filters: {} },
             "Races": { file: "generators/5etools/data/races.json", filters: {} },
             "Skills": { file: "generators/5etools/data/skills.json", filters: { ability: ["str", "dex", "con", "int", "wis", "cha"] } },
-            "Spells": { file: "generators/5etools/data/spells/index.json", filters: { level: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], school: ["A", "C", "D", "E", "I", "N", "T", "V"] } },
+            "Spells": { file: "generators/5etools/data/spells/index.json", filters: { level: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], school: ["A", "C", "D", "E", "I", "N", "T", "V"], classes: ["Artificer", "Bard", "Cleric", "Druid", "Paladin", "Ranger", "Sorcerer", "Warlock", "Wizard"] } },
             "Vehicles": { file: "generators/5etools/data/vehicles.json", filters: {} }
         };
 

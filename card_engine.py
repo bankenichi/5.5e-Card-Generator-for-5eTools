@@ -20,6 +20,7 @@ from parser_spells import enrich_spell
 from parser_classes import enrich_class, enrich_subclass
 from parser_optionalfeatures import enrich_optional_feature
 from parser_skills import enrich_skill
+from parser_backgrounds import enrich_background
 from sources import get_source_priority
 from icons import resolve_card_icon_name
 from parser_languages import enrich_language
@@ -176,7 +177,7 @@ def get_dataset_items(filename):
             'deity', 'deities', 'language', 'languages', 'psionic', 'psionics',
             'maneuver', 'maneuvers', 'metamagic', 'deck', 'decks', 'card', 'cards', 'feat', 'race', 'subrace',
             'class', 'subclass', 'classFeature', 'subclassFeature', 'skill', 'skills',
-            'optionalfeature', 'optionalfeatures'
+            'optionalfeature', 'optionalfeatures', 'background', 'backgrounds'
         ]
         matched = False
         for key in valid_root_keys:
@@ -492,6 +493,7 @@ def route_and_enrich(item, base_data_list, type_map, prop_map, raw_dict, all_raw
     elif dtype in ('skill', 'skills'): return enrich_skill(item, type_map)
     elif dtype in ('optionalfeature', 'optionalfeatures'): return enrich_optional_feature(item, type_map)
     elif dtype in ('language', 'languages'): return enrich_language(item, type_map)
+    elif dtype in ('background', 'backgrounds'): return enrich_background(item, type_map)
     else: return enrich_item_data(item, base_data_list, type_map, prop_map, raw_dict)
 
 # ---------------------------------------------------------------------------
@@ -979,7 +981,7 @@ def generate_html(payload, output_html_path=None):
             name_up = norm_item['name'].upper()
 
             is_excl = src in EXCLUDED_SOURCES
-            if item.get('_data_type') in ('deity', 'deities', 'class', 'subclass', 'skill', 'skills', 'optionalfeature', 'optionalfeatures'): is_excl = False
+            if item.get('_data_type') in ('deity', 'deities', 'class', 'subclass', 'skill', 'skills', 'optionalfeature', 'optionalfeatures', 'background', 'backgrounds'): is_excl = False
             if item.get('_data_type') == 'magicvariant': is_excl = False
             if '+1' in name_up or '+2' in name_up or '+3' in name_up: is_excl = False
             if is_excl: continue
@@ -1007,6 +1009,21 @@ def generate_html(payload, output_html_path=None):
                     norm_item['pantheon'] = MASTER_STATS[d_name].get('_best_pantheon', norm_item.get('pantheon', 'Unknown Pantheon'))
                 elif 'pantheon' not in norm_item:
                     norm_item['pantheon'] = 'Unknown Pantheon'
+            
+            if norm_item.get('_data_type') in ('spell', 'spells'):
+                from parser_spells import get_spell_classes
+                classes = []
+                if 'classes' in item and isinstance(item['classes'], dict):
+                    from_cl = item['classes'].get('fromClassList', [])
+                    classes.extend([c.get('name') for c in from_cl if c.get('name')])
+                
+                extra = get_spell_classes(norm_item.get('name', ''), primary_file)
+                if 'class' in extra:
+                    classes.extend([c.get('name') for c in extra['class'] if c.get('name')])
+                if 'classVariant' in extra:
+                    classes.extend([c.get('name') for c in extra['classVariant'] if c.get('name')])
+                    
+                norm_item['classes'] = list(set(classes))
 
             # Pre-compute archetype for class/subclass so the archetype filter works
             # before enrichment runs (enrich_class/subclass sets it, but that's post-filter)

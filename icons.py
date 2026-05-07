@@ -14,6 +14,8 @@ ICON_MAP = {
     "disease": "conditions-diseases",
     "deck": "decks",
     "deity": "deities",
+    "background": "action-triangle-glyph",
+    "backgrounds": "action-triangle-glyph",
     "feat": "action-triangle-glyph", # Feats default
     "feats": "action-triangle-glyph",
     "item": "items",
