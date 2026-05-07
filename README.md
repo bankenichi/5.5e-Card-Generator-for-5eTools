@@ -4,6 +4,25 @@ A fully local tool that connects to the 5etools dataset to generate custom, prin
 
 Whether you need spell cards, item cards, class features, or bastion rules, this generator pulls the most up-to-date information and automatically formats it into clean, readable cards ready for the table (allegedly).
 
+Category          Number of Cards	Unique Entries
+Actions	         20	               20
+Backgrounds	      306	            146
+Bastions	         58	               53
+Classes	         626	            383
+Conditions	      38	               38
+Decks	            375               369
+Deities	         464	            322
+Feats	            214	            214
+Items	            2061	            1903
+Languages	      90	               90
+Optional Features	159	            157
+Psionics	         149	            49
+Races	            163	            157
+Skills	         18	               18
+Spells	         568	            551
+Vehicles	         77	               69
+Total	            5286	            4539
+
 ##  Features
 
 * **5.5e Smart Prioritization:** Built with the 2024 rules update in mind. If an item, spell, or feature exists in multiple books, the engine automatically prioritizes the newest 2024 core rulebooks (e.g., XPHB, XDMG, XMM) over the legacy 2014 versions.
@@ -29,7 +48,7 @@ This tool is designed to run on **Windows** and requires an active internet conn
 4. Click **Generate Deck**.
 5. Once complete, click the **Open Custom Deck** button. Your cards will open in a new tab as `Custom_Deck_Cards.html`.
 
-###  Printing Instructions
+##  Printing Instructions
 The output HTML is optimized for standard US Letter (8.5" x 11") printing.
 * Press `Ctrl + P` in your browser.
 * Set Paper Size to **Letter**.
