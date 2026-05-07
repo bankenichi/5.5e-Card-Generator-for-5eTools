@@ -138,7 +138,15 @@ def enrich_item_data(item, base_data_list, type_map, prop_map, raw_dict):
             elif isinstance(p, dict):
                 uid = p.get('uid') or p.get('name') or ''
                 prop_abbrs.append(uid.split('|')[0].upper())
-        prop_names = [prop_map.get(p, p) for p in prop_abbrs if p]
+        
+        prop_names = []
+        for p in prop_abbrs:
+            if not p: continue
+            name = prop_map.get(p, p)
+            if p in ('T', 'THROWN') and item.get('range'):
+                name = f"{name} ({item['range']} ft.)"
+            prop_names.append(name)
+            
         if prop_names: stats.append({'type': 'item', 'name': 'Properties', 'entry': ', '.join(prop_names)})
         
     if item.get('mastery'):
