@@ -148,6 +148,9 @@ def enrich_item_data(item, base_data_list, type_map, prop_map, raw_dict):
             prop_names.append(name)
             
         if prop_names: stats.append({'type': 'item', 'name': 'Properties', 'entry': ', '.join(prop_names)})
+
+    if item.get('range') and raw_type == 'R':
+        stats.append({'type': 'item', 'name': 'Range', 'entry': f"{item['range']} ft."})
         
     if item.get('mastery'):
         m_abbrs = []
@@ -392,6 +395,14 @@ def enrich_item_data(item, base_data_list, type_map, prop_map, raw_dict):
     else:
         final_entries.extend(inherited_entries)
         final_entries.extend(item['entries'])
-            
-    item['entries'] = final_entries
+
+    # Filter out the generic rulebook definitions inherited from base items
+    filtered_entries = []
+    for entry in final_entries:
+        # If it's a generic text entry named "Range" (or Ammunition), skip it.
+        if isinstance(entry, dict) and entry.get('type') == 'entries' and entry.get('name') in ['Range', 'Ammunition']:
+            continue 
+        filtered_entries.append(entry)
+
+    item['entries'] = filtered_entries
     return item
