@@ -5,7 +5,6 @@ def enrich_condition(item, type_map=None):
     # Standard purple theme for afflictions and statuses
     item['primary_color'] = "#4A148C"
     item['bg_color'] = "#F3E5F5"
-    item['icon_name'] = "conditions-diseases"
     item['rarity_badge'] = ""
     
     # Capitalize the specific data type (Condition, Disease, or Status)

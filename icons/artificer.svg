@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+<g transform="translate(-22,-19) scale(1.55)">  
+  <!-- Outer gear -->
+  <path d="M40 14
+           L44 20
+           L52 18
+           L54 26
+           L62 30
+           L58 38
+           L62 46
+           L54 50
+           L52 58
+           L44 56
+           L40 62
+           L36 56
+           L28 58
+           L26 50
+           L18 46
+           L22 38
+           L18 30
+           L26 26
+           L28 18
+           L36 20 Z" fill="none" stroke="#5a4a2f" stroke-width="2" stroke-linejoin="round"></path>
+  <!-- Core -->
+  <circle cx="40" cy="38" r="10" fill="none" stroke="#5a4a2f" stroke-width="2.5"></circle>
+  <!-- Infusion rune -->
+  <path d="M40 29 V48" fill="none" stroke="#5a4a2f" stroke-width="1.8" stroke-linecap="round"></path>
+  <path d="M30 38 H50" fill="none" stroke="#5a4a2f" stroke-width="1.8" stroke-linecap="round"></path>
+</g>
+</svg>

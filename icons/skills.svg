@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+
+  <!-- Central ring -->
+  <circle cx="40" cy="40" r="10" fill="none" stroke="#5a4a2f" stroke-width="2.3"></circle>
+
+  <!-- Connecting arms -->
+  <path d="M40 18 V30" fill="none" stroke="#5a4a2f" stroke-width="2" stroke-linecap="round"></path>
+
+  <path d="M40 50 V62" fill="none" stroke="#5a4a2f" stroke-width="2" stroke-linecap="round"></path>
+
+  <path d="M18 40 H30" fill="none" stroke="#5a4a2f" stroke-width="2" stroke-linecap="round"></path>
+
+  <path d="M50 40 H62" fill="none" stroke="#5a4a2f" stroke-width="2" stroke-linecap="round"></path>
+
+  <!-- Skill nodes -->
+  <circle cx="40" cy="14" r="5" fill="none" stroke="#5a4a2f" stroke-width="1.8"></circle>
+
+  <circle cx="40" cy="66" r="5" fill="none" stroke="#5a4a2f" stroke-width="1.8"></circle>
+
+  <circle cx="14" cy="40" r="5" fill="none" stroke="#5a4a2f" stroke-width="1.8"></circle>
+
+  <circle cx="66" cy="40" r="5" fill="none" stroke="#5a4a2f" stroke-width="1.8"></circle>
+
+  <!-- Small accents -->
+  <path d="M54 26 L60 20" fill="none" stroke="#5a4a2f" stroke-width="1.4" stroke-linecap="round"></path>
+
+  <path d="M20 60 L26 54" fill="none" stroke="#5a4a2f" stroke-width="1.4" stroke-linecap="round"></path>
+</svg>

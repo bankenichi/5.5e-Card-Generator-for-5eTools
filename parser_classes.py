@@ -1,6 +1,26 @@
 import copy
 import json
-import re
+
+from parser_utils import (
+    BYPASS_EXCLUDED_SOURCES_DTYPES,
+    PRE_FILTER_HOOKS,
+    META_ONLY_DTYPES,
+)
+
+# ---------------------------------------------------------------------------
+# META-ONLY REGISTRATION
+# classFeature and subclassFeature are reference data consumed by the class
+# enrichers.  They must never be rendered as standalone cards.
+# ---------------------------------------------------------------------------
+META_ONLY_DTYPES.update({'classFeature', 'subclassFeature'})
+
+
+# ---------------------------------------------------------------------------
+# BYPASS EXCLUDED SOURCES
+# Classes and subclasses should always pass through the global source filter.
+# ---------------------------------------------------------------------------
+BYPASS_EXCLUDED_SOURCES_DTYPES.update({'class', 'subclass'})
+
 
 # ---------------------------------------------------------------------------
 # ARCHETYPE & TAG HELPERS
@@ -11,7 +31,7 @@ def determine_class_archetypes(item, all_raw):
     archetypes = []
     has_spell_cols = False
     has_9th_level = False
-    
+
     # 1. Check Table Columns
     for group in item.get('classTableGroups', []):
         for lbl in group.get('colLabels', []):
@@ -20,7 +40,7 @@ def determine_class_archetypes(item, all_raw):
                 has_spell_cols = True
             if '9th' in lbl_str or 'level=9' in lbl_str:
                 has_9th_level = True
-                
+
     # 2. Check explicitly declared progressions
     prog = item.get('casterProgression', '')
     if prog in ('full', 'pact'):
@@ -28,7 +48,7 @@ def determine_class_archetypes(item, all_raw):
         has_9th_level = True
     elif prog in ('half', 'artificer'):
         has_spell_cols = True
-        
+
     # 3. Assign Archetypes
     if has_9th_level:
         archetypes.append("Spellcaster")
@@ -51,15 +71,15 @@ def determine_class_archetypes(item, all_raw):
                             if 'spell' in lbl_str or 'cantrip' in lbl_str or 'slot' in lbl_str:
                                 has_caster_subclass = True
                                 break
-                        if has_caster_subclass: 
+                        if has_caster_subclass:
                             break
-                if has_caster_subclass: 
+                if has_caster_subclass:
                     break
-        
+
         archetypes.append("Martial")
         if has_caster_subclass:
             archetypes.append("Gish / Subclass Caster")
-            
+
     return archetypes
 
 
@@ -67,11 +87,11 @@ def determine_subclass_archetypes(item, all_raw):
     """Subclasses inherit the parent class archetype, but can add Gish if they grant casting."""
     archetypes = []
     class_name = str(item.get('className', '')).lower().strip()
-    
+
     # 1. Get Parent Class
     parent_class = next((f for f in all_raw if f.get('_data_type') == 'class' and str(f.get('name', '')).lower().strip() == class_name), None)
     parent_archetypes = determine_class_archetypes(parent_class, []) if parent_class else ["Martial"]
-    
+
     # 2. Check if this specific subclass grants spellcasting
     has_sub_casting = bool(item.get('casterProgression') or 'spellcastingAbility' in item)
     if not has_sub_casting:
@@ -81,7 +101,7 @@ def determine_subclass_archetypes(item, all_raw):
                 if 'spell' in lbl_str or 'cantrip' in lbl_str or 'slot' in lbl_str:
                     has_sub_casting = True
                     break
-            if has_sub_casting: 
+            if has_sub_casting:
                 break
 
     # 3. Assign Inherited Archetypes
@@ -93,8 +113,37 @@ def determine_subclass_archetypes(item, all_raw):
         archetypes.append("Martial")
         if has_sub_casting:
             archetypes.append("Gish / Subclass Caster")
-            
+
     return archetypes
+
+
+# ---------------------------------------------------------------------------
+# PRE-FILTER HOOK
+# Injects 'archetype' and normalises 'className' for subclasses so that both
+# fields are available during the filter pass before enrichment runs.
+# Also handles the subclass-parent name filter: a subclass passes a name filter
+# if its own name OR its parent className matches, so we inject a
+# 'filter_class_name' field the engine can check uniformly via the generic
+# list-value path rather than needing dtype-specific branching.
+# ---------------------------------------------------------------------------
+def _class_pre_filter_hook(norm_item: dict, primary_file: str, all_raw: list) -> None:
+    dtype = norm_item.get('_data_type', '')
+
+    if dtype == 'class':
+        norm_item['archetype'] = determine_class_archetypes(norm_item, all_raw)
+        # For the name filter, classes match on their own name.
+        norm_item['filter_class_name'] = [norm_item.get('name', '')]
+
+    elif dtype == 'subclass':
+        norm_item['archetype'] = determine_subclass_archetypes(norm_item, all_raw)
+        # For the name filter, subclasses match on their own name OR their parent className.
+        own_name = norm_item.get('name', '')
+        parent_name = norm_item.get('className', '')
+        names = [n for n in [own_name, parent_name] if n]
+        norm_item['filter_class_name'] = names
+
+for _dt in ('class', 'subclass'):
+    PRE_FILTER_HOOKS[_dt] = _class_pre_filter_hook
 
 
 # ---------------------------------------------------------------------------
@@ -455,7 +504,6 @@ def safe_join_proficiencies(prof_list, item_type=""):
     out = []
     for p in prof_list:
         if isinstance(p, str):
-            # Capitalize the first letter without breaking inline tags
             out.append(p[0].upper() + p[1:] if p else "")
         elif isinstance(p, dict):
             if 'choose' in p:
@@ -491,22 +539,21 @@ def enrich_class(item, type_map=None, all_raw=None):
         'int': 'Intelligence', 'wis': 'Wisdom', 'cha': 'Charisma'
     }
 
-    # Dynamic Archetype Assignment
-    result['archetype'] = determine_class_archetypes(item, all_raw)
+    # Archetype is already injected by the PRE_FILTER_HOOK; preserve it.
+    if 'archetype' not in result:
+        result['archetype'] = determine_class_archetypes(item, all_raw)
 
     # 1. Primary Ability
     pa_list = result.get('primaryAbility', [])
     pa_strs = []
-    
+
     if pa_list:
-        # Standard extraction for 2024 classes
         for pa in pa_list:
             if isinstance(pa, dict):
                 opts = [ABILITY_MAP.get(k, k.capitalize()) for k, v in pa.items() if v]
                 if opts:
                     pa_strs.append(" or ".join(opts))
     else:
-        # Fallback to Multiclassing Requirements for 2014 classes
         mc_reqs = result.get('multiclassing', {}).get('requirements', {})
         opts = []
         for k, v in mc_reqs.items():
@@ -599,8 +646,9 @@ def enrich_subclass(item, type_map=None, all_raw=None):
 
     opt_index = build_optional_feature_index(all_raw) if all_raw else {}
 
-    # Dynamic Archetype Assignment
-    result['archetype'] = determine_subclass_archetypes(item, all_raw)
+    # Archetype is already injected by the PRE_FILTER_HOOK; preserve it.
+    if 'archetype' not in result:
+        result['archetype'] = determine_subclass_archetypes(item, all_raw)
 
     # 1. Subclass Specific Tables
     entries.extend(process_class_tables(item, is_subclass=True))

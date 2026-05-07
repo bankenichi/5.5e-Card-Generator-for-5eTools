@@ -8,7 +8,6 @@ def enrich_vehicle(item, type_map=None):
     # Steel/Iron theme
     item['primary_color'] = "#37474F" 
     item['bg_color'] = "#ECEFF1"
-    item['icon_name'] = "vehicles"
     item['rarity_badge'] = ""
     
     v_type = str(item.get('vehicleType', 'Vehicle')).replace('_', ' ').title()

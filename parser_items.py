@@ -1,5 +1,42 @@
 import copy
 import re
+from parser_utils import BYPASS_EXCLUDED_SOURCES_DTYPES
+
+# Magic variants always pass through the global excluded-sources filter so that
+# +1/+2/+3 items from core books still appear when a magic-items dataset is loaded.
+# The 'magicvariant' dtype is owned by the items parser.
+BYPASS_EXCLUDED_SOURCES_DTYPES.add('magicvariant')
+
+# ---------------------------------------------------------------------------
+# FOOTER RENDERER
+# Items display cost (left) and weight (right) in the card footer.  The
+# artifact rarity uses an infinity glyph instead of a numeric cost.
+# Registered into parser_utils.FOOTER_RENDERERS at the bottom of this file.
+# ---------------------------------------------------------------------------
+def _format_item_value(value):
+    if value is None or value == '': return ''
+    if isinstance(value, (int, float)) and float(value).is_integer(): value = int(value)
+    if isinstance(value, int):
+        if value % 100 == 0: return f"{value // 100:,} gp"
+        if value % 10 == 0: return f"{value // 10:,} sp"
+        return f"{value:,} cp"
+    return str(value)
+
+def render_item_footer(item: dict):
+    """Returns (left_html, right_html) for the card footer."""
+    val = _format_item_value(item.get('value', ''))
+    cost_str = str(val) if val else ""
+    if str(item.get('rarity', '')).lower() == 'artifact':
+        cost_str = '<span style="font-size: 1.4em;">&infin;</span>'
+
+    wt = item.get('weight')
+    if wt is None or str(wt).strip().lower() in ('none', ''):
+        weight_str = ""
+    else:
+        wt_str_val = str(wt).strip()
+        weight_str = f"{wt_str_val} lb." if not wt_str_val.endswith('lb.') and not wt_str_val.endswith('lbs.') else wt_str_val
+
+    return cost_str, weight_str
 
 RARITY_COLORS = {
     "common": ("#000000", "#F5F5F5"),      # Black
@@ -91,6 +128,43 @@ def entry_is_placeholder(entry):
         return entry_is_placeholder(entry.get('entries', []))
     return False
 
+def resolve_item_entry_str(entry_str, item_entry_dict, item):
+    """
+    Resolves a '#itemEntry Name|SOURCE' reference string to a list of rendered
+    entries by looking up the named itemEntry template and substituting item
+    field values for any {=key} placeholders.
+
+    Returns a list of resolved entries, or an empty list if the template is
+    not found.
+    """
+    import json as _json
+
+    # Extract the reference portion: everything after '#itemEntry '
+    ref = entry_str.split('#itemEntry', 1)[-1].strip()
+    parts = ref.split('|')
+    name = parts[0].strip().lower()
+    source = parts[1].strip().lower() if len(parts) > 1 else ''
+
+    template_obj = item_entry_dict.get((name, source)) or item_entry_dict.get(name)
+    if not template_obj or 'entriesTemplate' not in template_obj:
+        return []
+
+    # Serialise the template, substitute all {=key} placeholders from the item,
+    # then deserialise back to a Python structure — same pattern used in
+    # extract_entries for 'inherits' templates.
+    raw_str = _json.dumps(template_obj['entriesTemplate'])
+    for k, v in item.items():
+        if isinstance(v, (str, int)):
+            raw_str = raw_str.replace(f'{{={k}}}', str(v))
+
+    try:
+        resolved = _json.loads(raw_str)
+    except Exception:
+        return []
+
+    return resolved if isinstance(resolved, list) else [resolved]
+
+
 def enrich_item_data(item, base_data_list, type_map, prop_map, raw_dict):
     stats = []
     
@@ -109,8 +183,6 @@ def enrich_item_data(item, base_data_list, type_map, prop_map, raw_dict):
         item['rarity_badge'] = f'<span style="color: {pc}; font-weight: 900;">{abbr}</span>'
     else:
         item['rarity_badge'] = ''
-
-    item['icon_name'] = None
 
     # --- Build Stat Blocks ---
     if item.get('ac'):
@@ -406,3 +478,13 @@ def enrich_item_data(item, base_data_list, type_map, prop_map, raw_dict):
 
     item['entries'] = filtered_entries
     return item
+
+
+# ---------------------------------------------------------------------------
+# HOOK REGISTRATION
+# Register the items footer renderer under the sentinel key '_items'.
+# The engine uses this key for any item that routes to enrich_item_data
+# (i.e. all dtypes not claimed by another parser).
+# ---------------------------------------------------------------------------
+from parser_utils import FOOTER_RENDERERS
+FOOTER_RENDERERS['_items'] = render_item_footer

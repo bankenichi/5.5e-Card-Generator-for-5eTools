@@ -1,5 +1,9 @@
 import copy
 import json
+from parser_utils import (
+    BYPASS_EXCLUDED_SOURCES_DTYPES,
+    PRE_FILTER_HOOKS,
+)
 
 PANTHEON_COLORS = {
     "Faerûnian": ("#5D4037", "#FFF8E1"),
@@ -136,6 +140,33 @@ try:
 except FileNotFoundError:
     pass
 
+
+# ---------------------------------------------------------------------------
+# BYPASS EXCLUDED SOURCES
+# Deities should always pass through the global source exclusion filter.
+# ---------------------------------------------------------------------------
+BYPASS_EXCLUDED_SOURCES_DTYPES.update({'deity', 'deities'})
+
+
+# ---------------------------------------------------------------------------
+# PRE-FILTER HOOK
+# Injects the cross-source best pantheon into the normalized item so that
+# pantheon-based filters see a consistent value before enrichment runs.
+# ---------------------------------------------------------------------------
+def _deity_pre_filter_hook(norm_item: dict, primary_file: str, all_raw: list) -> None:
+    d_name = norm_item.get('name')
+    if d_name and d_name in MASTER_STATS:
+        norm_item['pantheon'] = MASTER_STATS[d_name].get('_best_pantheon', norm_item.get('pantheon', 'Unknown Pantheon'))
+    elif 'pantheon' not in norm_item:
+        norm_item['pantheon'] = 'Unknown Pantheon'
+
+for _dt in ('deity', 'deities'):
+    PRE_FILTER_HOOKS[_dt] = _deity_pre_filter_hook
+
+
+# ---------------------------------------------------------------------------
+# ENRICHMENT
+# ---------------------------------------------------------------------------
 def enrich_deity(item, type_map=None):
     # 5. Overwrite the item with the fully merged, deduplicated "Super-Cache"
     name = item.get('name')
@@ -155,7 +186,6 @@ def enrich_deity(item, type_map=None):
     pc, bc = PANTHEON_COLORS.get(pantheon_key, ("#455A64", "#ECEFF1"))
     item['primary_color'] = pc
     item['bg_color'] = bc
-    item['icon_name'] = "deities"
     item['meta_left'] = f"{pantheon_key}"
 
     # 6. Dynamically build stats from whatever keys remain

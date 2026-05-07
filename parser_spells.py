@@ -1,6 +1,7 @@
 import os
 import json
 import copy
+from parser_utils import PRE_FILTER_HOOKS
 
 SCHOOL_MAP = {
     'A': 'Abjuration',
@@ -58,6 +59,41 @@ def get_spell_classes(spell_name, origin_file):
         
     return _sources_cache[origin_file].get(spell_name.lower().strip(), {})
 
+
+# ---------------------------------------------------------------------------
+# PRE-FILTER HOOK
+# Aggregates class lists from the item itself and from the supplemental
+# sources.json so that 'classes' is available as a filter field before
+# enrichment runs.
+# ---------------------------------------------------------------------------
+def _spell_pre_filter_hook(norm_item: dict, primary_file: str, all_raw: list) -> None:
+    classes = []
+
+    # Classes embedded directly in the item
+    if 'class' in norm_item and isinstance(norm_item['class'], list):
+        classes.extend([c.get('name') for c in norm_item['class'] if c.get('name')])
+    if 'classVariant' in norm_item and isinstance(norm_item['classVariant'], list):
+        classes.extend([c.get('name') for c in norm_item['classVariant'] if c.get('name')])
+    if 'classes' in norm_item and isinstance(norm_item['classes'], dict):
+        from_cl = norm_item['classes'].get('fromClassList', [])
+        classes.extend([c.get('name') for c in from_cl if c.get('name')])
+
+    # Supplemental sources.json
+    extra = get_spell_classes(norm_item.get('name', ''), primary_file)
+    if 'class' in extra:
+        classes.extend([c.get('name') for c in extra['class'] if c.get('name')])
+    if 'classVariant' in extra:
+        classes.extend([c.get('name') for c in extra['classVariant'] if c.get('name')])
+
+    norm_item['classes'] = list(dict.fromkeys(c for c in classes if c))
+
+for _dt in ('spell', 'spells'):
+    PRE_FILTER_HOOKS[_dt] = _spell_pre_filter_hook
+
+
+# ---------------------------------------------------------------------------
+# ENRICHMENT
+# ---------------------------------------------------------------------------
 def enrich_spell(item, type_map=None):
     stats = []
     
@@ -75,7 +111,6 @@ def enrich_spell(item, type_map=None):
 
     # Header Subtitle: School ONLY
     item['meta_left'] = school_name
-    item['icon_name'] = 'spells'
 
     # Footer Processing: Classes on the left, Ritual on the right
     is_ritual = item.get('meta', {}).get('ritual', False)

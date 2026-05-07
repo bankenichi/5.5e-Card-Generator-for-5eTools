@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+  <!-- Book -->
+  <path d="M22 18
+           Q34 14 40 22
+           Q46 14 58 18
+           L58 62
+           Q46 58 40 66
+           Q34 58 22 62 Z" fill="none" stroke="#5a4a2f" stroke-width="2.8" stroke-linejoin="round"></path>
+
+  <!-- Spine -->
+  <path d="M40 22 L40 66" fill="none" stroke="#5a4a2f" stroke-width="2"></path>
+
+  <!-- Rune -->
+  <circle cx="40" cy="40" r="5" fill="none" stroke="#5a4a2f" stroke-width="2"></circle>
+
+  <path d="M40 35 L40 45" fill="none" stroke="#5a4a2f" stroke-width="1.5" stroke-linecap="round"></path>
+</svg>

@@ -24,12 +24,19 @@ from parser_backgrounds import enrich_background
 from sources import get_source_priority
 from icons import resolve_card_icon_name
 from parser_languages import enrich_language
+from parser_utils import (
+    clean_tags,
+    tokenize_text,
+    SOURCE_PRIORITY_OVERRIDES,
+    PRE_FILTER_HOOKS,
+    NORMALIZE_TYPE_HOOKS,
+    FOOTER_RENDERERS,
+)
 
 # ---------------------------------------------------------------------------
 # DATA MAPS
 # ---------------------------------------------------------------------------
 
-EXCLUDED_SOURCES = {'PHB', 'DMG', 'MM', "PLAYER'S HANDBOOK", "DUNGEON MASTER'S GUIDE", "MONSTER MANUAL"}
 
 # ---------------------------------------------------------------------------
 # ASSET LOADERS
@@ -64,97 +71,6 @@ def load_svg_as_data_uri(filename, force_stretch=False):
 
 BG_URI = load_svg_as_data_uri("parchment-background.svg", force_stretch=True)
 DIVIDER_URI = load_svg_as_data_uri("ornamental-divider.svg")
-
-# ---------------------------------------------------------------------------
-# DATA PARSERS & TEXT RESOLVERS
-# ---------------------------------------------------------------------------
-def clean_tags(text):
-    text = str(text)
-    LAST_PART_TAGS = {'adventure', 'homebrew'}
-    DROP_TAGS = {'note', '5etools', 'quickref'}
-    TITLE_TAGS = {'spell', 'item', 'condition', 'disease', 'background', 'race', 'optfeature', 'class', 'subclass', 'deity'}
-
-    def replace_tag(match):
-        tag_name = match.group(1).lower()
-        inner = (match.group(2) or "").strip()
-        parts = [p.strip() for p in inner.split('|')]
-
-        if tag_name == 'card':
-            if len(parts) > 3 and parts[3]:
-                return parts[3]
-            return parts[0]
-
-        if tag_name == 'atk':
-            atk_map = {
-                'm': 'Melee Attack:', 'r': 'Ranged Attack:',
-                'mw': 'Melee Weapon Attack:', 'rw': 'Ranged Weapon Attack:',
-                'ms': 'Melee Spell Attack:', 'rs': 'Ranged Spell Attack:',
-                'mw,rw': 'Melee or Ranged Weapon Attack:',
-                'ms,rs': 'Melee or Ranged Spell Attack:',
-                'g': ''
-            }
-            val = atk_map.get(parts[0].replace(' ', '').lower(), '')
-            return f"<i>{val}</i>" if val else ""
-            
-        if tag_name == 'hit':
-            val = parts[0]
-            if val and not val.startswith(('+', '-')): return f"+{val}"
-            return val
-            
-        if tag_name == 'h':
-            return "<i>Hit:</i>"
-            
-        if tag_name == 'recharge':
-            return f"(Recharge {parts[0]}-6)" if parts and parts[0] else "(Recharge)"
-            
-        if tag_name == 'dc':
-            return f"DC {parts[0]}"
-
-        if tag_name == 'filter':
-            return parts[0] if parts else ""
-            
-        if tag_name in DROP_TAGS:
-            return re.sub(r'@\w+\s*', '', inner).split('|')[0].strip()
-            
-        if tag_name in TITLE_TAGS:
-            val = parts[0] if parts else ""
-            return val.title()
-        
-        if tag_name == 'book':
-            book_name = parts[0] if len(parts) > 0 else ""
-            chapter = parts[2] if len(parts) > 2 and parts[2] else ""
-            section = parts[3] if len(parts) > 3 and parts[3] else ""
-            res = book_name
-            if chapter: res += f", Chapter {chapter}"
-            if section: res += f" ({section})"
-            return res
-
-        if tag_name in LAST_PART_TAGS:
-            for p in reversed(parts):
-                if p: return p
-            return parts[0] if parts else ""
-            
-        if tag_name == 'link':
-            return parts[0] if parts else ""
-            
-        if len(parts) > 2 and parts[2]:
-            return parts[2]
-        return parts[0] if parts else ""
-
-    for _ in range(10):
-        new_text = re.sub(r"\{[@#](\w+)(?:\s+([^{}]+))?\}", replace_tag, text)
-        if new_text == text:
-            break
-        text = new_text
-
-    text = re.sub(r"\{[^}]*\}", "", text)
-    text = re.sub(r"@\w+\s*", "", text) 
-    text = text.replace("}", "").replace("{", "")
-    text = re.sub(r"(?i)\* This generic variant has the same name and source as the item .*?(?:\.|$)", "", text)
-    return text.strip()
-
-def tokenize_text(text):
-    return re.findall(r'\{@[^}]+\}|\S+', text)
 
 def get_dataset_items(filename):
     if not os.path.exists(filename): return []
@@ -323,25 +239,15 @@ def get_inherited_val(item, key, default=None):
 # TYPE NORMALIZER
 # ---------------------------------------------------------------------------
 
-# Maps raw language type values to the two canonical display values.
-# Applied early in normalize_item so filters see clean values before enrichment.
-_LANGUAGE_TYPE_MAP = {
-    'standard': 'Standard',
-    'exotic':   'Rare',
-    'rare':     'Rare',
-    'secret':   'Rare',   # Druidic, Thieves' Cant — classified as Rare
-    '':         'Standard',
-}
-
 def _normalize_type(item):
     """
-    For language items, maps raw type values to canonical 'Standard' / 'Rare'
-    so filters work correctly before enrichment runs.
-    For all other data types, returns the raw type value unchanged.
+    Dispatches to a parser-registered hook for dtype-specific type normalization.
+    Falls back to the raw item['type'] value for unregistered dtypes.
     """
-    if item.get('_data_type') in ('language', 'languages'):
-        raw = str(item.get('type', '') or '').lower().strip()
-        return _LANGUAGE_TYPE_MAP.get(raw, 'Standard')
+    dtype = item.get('_data_type', '')
+    hook = NORMALIZE_TYPE_HOOKS.get(dtype)
+    if hook:
+        return hook(item)
     return item.get('type', '')
 
 def normalize_item(item, raw_dict, item_entry_dict=None):
@@ -373,108 +279,18 @@ def normalize_item(item, raw_dict, item_entry_dict=None):
     })
     return result
 
-def format_item_value(value):
-    if value is None or value == '': return ''
-    if isinstance(value, (int, float)) and float(value).is_integer(): value = int(value)
-    if isinstance(value, int):
-        if value % 100 == 0: return f"{value // 100:,} gp"
-        if value % 10 == 0: return f"{value // 10:,} sp"
-        return f"{value:,} cp"
-    return str(value)
 
 # ---------------------------------------------------------------------------
 # CONDENSER ENGINE UTILS
 # ---------------------------------------------------------------------------
 
-def extract_bonus_name(name):
-    name = name.strip()
-    m = re.match(r'^\s*(\+\s*\d+)\s+(.+)$', name)
-    if m: return m.group(2).strip(), m.group(1).replace(" ", "")
-    m = re.match(r'^(.+?)(?:,\s*|\s+)(\+\s*\d+)\s*$', name)
-    if m: return m.group(1).strip(), m.group(2).replace(" ", "")
-    m = re.match(r'^(.+?)\s*\(\s*(\+\s*\d+)\s*\)$', name)
-    if m: return m.group(1).strip(), m.group(2).replace(" ", "")
-    m = re.search(r'^(.*?)\s*(\+\s*\d+)\s+(.*)$', name)
-    if m:
-        base = (m.group(1) + " " + m.group(3)).strip()
-        return base, m.group(2).replace(" ", "")
-    return name, None
-
-def extract_variant_name(name):
-    name = name.strip()
-    
-    if 'enspelled' in name.lower():
-        return name, None, None
-        
-    base_name, bonus = extract_bonus_name(name)
-    if bonus: return base_name, bonus, 'bonus'
-    
-    m = re.search(r'^(.*?)\s*\((Level\s*\d+|Cantrip)\)\s*$', name, re.IGNORECASE)
-    if m: return m.group(1).strip(), m.group(2).capitalize(), 'level'
-
-    prefixes = r'(acid|air|cold|earth|fire|force|lightning|necrotic|poison|psychic|radiant|thunder|water)'
-    
-    m = re.match(r'^\s*' + prefixes + r'\s+(.+)$', name, re.IGNORECASE)
-    if m: return m.group(2).strip(), m.group(1).capitalize(), 'element'
-    
-    m2 = re.match(r'^(.+?)\s+of\s+' + prefixes + r'\s*(.*)$', name, re.IGNORECASE)
-    if m2:
-        base = f"{m2.group(1)} of {m2.group(3)}".strip()
-        if base.endswith(" of"): base = base[:-3].strip()
-        return base, m2.group(2).capitalize(), 'element'
-        
-    m3 = re.search(r'^(.*?)\s*\(' + prefixes + r'\)\s*$', name, re.IGNORECASE)
-    if m3: return m3.group(1).strip(), m3.group(2).capitalize(), 'element'
-        
-    return name, None, None
-
-def replace_bonus_text(entry, old_bonus, new_bonus_str):
-    if isinstance(entry, str):
-        return re.sub(re.escape(old_bonus) + r'(?!\d)', new_bonus_str, entry, flags=re.IGNORECASE)
-    elif isinstance(entry, list):
-        return [replace_bonus_text(e, old_bonus, new_bonus_str) for e in entry]
-    elif isinstance(entry, dict):
-        return {k: replace_bonus_text(v, old_bonus, new_bonus_str) for k, v in entry.items()}
-    return entry
-
-def entry_is_placeholder(entry):
-    if isinstance(entry, str): return '#itemEntry' in entry
-    if isinstance(entry, list):
-        return all(entry_is_placeholder(e) for e in entry) if entry else False
-    if isinstance(entry, dict):
-        return entry_is_placeholder(entry.get('entries', []))
-    return False
-
-def resolve_item_entry_str(entry_str, item_entry_dict, source_item):
-    m = re.search(r'\{#itemEntry\s+([^|}]+)(?:\|([^}]*))?\}', entry_str)
-    if not m:
-        return None
-    ref_name = m.group(1).strip().lower()
-    ref_source = (m.group(2) or '').strip().lower()
-    template = item_entry_dict.get((ref_name, ref_source)) or item_entry_dict.get(ref_name)
-    if not template or 'entriesTemplate' not in template:
-        return None
-        
-    raw = json.dumps(template['entriesTemplate'])
-    
-    raw = re.sub(
-        r'\{\{getFullImmRes item\.([^}]+)\}\}', 
-        lambda match: ', '.join(source_item.get(match.group(1), [])).title() if isinstance(source_item.get(match.group(1)), list) else str(source_item.get(match.group(1), '')).title(), 
-        raw
-    )
-    
-    for k, v in source_item.items():
-        if isinstance(v, list):
-            substituted = ', '.join(str(x) for x in v)
-        elif isinstance(v, (str, int, float, bool)):
-            substituted = str(v)
-        else:
-            continue
-        raw = raw.replace('{{item.' + k + '}}', substituted)
-        
-    raw = re.sub(r'\{\{[^}]+\}\}', '', raw)
-
-    return json.loads(raw)
+from parser_items import (
+    extract_bonus_name,
+    extract_variant_name,
+    replace_bonus_text,
+    entry_is_placeholder,
+    resolve_item_entry_str,
+)
 
 def route_and_enrich(item, base_data_list, type_map, prop_map, raw_dict, all_raw):
     dtype = item.get('_data_type', '')
@@ -486,7 +302,7 @@ def route_and_enrich(item, base_data_list, type_map, prop_map, raw_dict, all_raw
     elif dtype in ('psionic', 'psionics'): return enrich_psionic(item, type_map)
     elif dtype in ('vehicle', 'vehicles', 'vehicleUpgrade'): return enrich_vehicle(item, type_map)
     elif dtype in ('feat', 'feats'): return enrich_feat(item, type_map)
-    elif dtype in ('race', 'races', 'subrace', 'subraces'): return enrich_race(item, type_map)
+    elif dtype in ('race', 'races', 'subrace', 'subraces'): return enrich_race(item, type_map, all_raw)
     elif dtype in ('spell', 'spells'): return enrich_spell(item, type_map)
     elif dtype == 'class': return enrich_class(item, type_map, all_raw)
     elif dtype == 'subclass': return enrich_subclass(item, type_map, all_raw)
@@ -958,8 +774,10 @@ def generate_html(payload, output_html_path=None):
         items_to_process = all_raw if is_items_dataset else primary_raw_items
 
         # STRICT META TYPE BLOCK
-        meta_types = {'itemType', 'itemProperty', 'itemTypeAdditionalEntries', 'itemEntry',
-                      'classFeature', 'subclassFeature'}
+        # Dtypes that are purely reference/lookup data and never generate cards.
+        # Parsers may extend this set via parser_utils.META_ONLY_DTYPES.
+        from parser_utils import META_ONLY_DTYPES
+        meta_types = META_ONLY_DTYPES
 
         # ---------------------------------------------------------------------------
         # PASS 1 — Normalize and deduplicate by best source BEFORE filtering.
@@ -980,59 +798,21 @@ def generate_html(payload, output_html_path=None):
             src = norm_item['source']
             name_up = norm_item['name'].upper()
 
-            is_excl = src in EXCLUDED_SOURCES
-            if item.get('_data_type') in ('deity', 'deities', 'class', 'subclass', 'skill', 'skills', 'optionalfeature', 'optionalfeatures', 'background', 'backgrounds'): is_excl = False
-            if item.get('_data_type') == 'magicvariant': is_excl = False
-            if '+1' in name_up or '+2' in name_up or '+3' in name_up: is_excl = False
-            if is_excl: continue
-
             name_key = norm_item.get('name', '').lower().strip()
+            dtype = norm_item.get('_data_type', '')
             current_priority = get_source_priority(src)
-            # SCAG override: always prefer SCAG for languages (regional dialect data)
-            if item.get('_data_type') in ('language', 'languages') and src == 'SCAG':
-                current_priority = 0
 
-            # Pre-compute archetype for class/subclass so the archetype filter works
-            # before enrichment runs (enrich_class/subclass sets it, but that's post-filter)
-            if norm_item.get('_data_type') == 'class' and 'archetype' not in norm_item:
-                from parser_classes import determine_class_archetypes
-                norm_item['archetype'] = determine_class_archetypes(item, all_raw)
-            elif norm_item.get('_data_type') == 'subclass' and 'archetype' not in norm_item:
-                from parser_classes import determine_subclass_archetypes
-                norm_item['archetype'] = determine_subclass_archetypes(item, all_raw)
-            # --> NEW: Standardize Pantheon before filtering
-            elif norm_item.get('_data_type') in ('deity', 'deities'):
-                from parser_deities import MASTER_STATS
-                d_name = norm_item.get('name')
-                if d_name and d_name in MASTER_STATS:
-                    # Inject the prioritized best pantheon into the normalized item 
-                    norm_item['pantheon'] = MASTER_STATS[d_name].get('_best_pantheon', norm_item.get('pantheon', 'Unknown Pantheon'))
-                elif 'pantheon' not in norm_item:
-                    norm_item['pantheon'] = 'Unknown Pantheon'
-            
-            if norm_item.get('_data_type') in ('spell', 'spells'):
-                from parser_spells import get_spell_classes
-                classes = []
-                if 'classes' in item and isinstance(item['classes'], dict):
-                    from_cl = item['classes'].get('fromClassList', [])
-                    classes.extend([c.get('name') for c in from_cl if c.get('name')])
-                
-                extra = get_spell_classes(norm_item.get('name', ''), primary_file)
-                if 'class' in extra:
-                    classes.extend([c.get('name') for c in extra['class'] if c.get('name')])
-                if 'classVariant' in extra:
-                    classes.extend([c.get('name') for c in extra['classVariant'] if c.get('name')])
-                    
-                norm_item['classes'] = list(set(classes))
+            # Allow parsers to override source priority for their dtype
+            priority_hook = SOURCE_PRIORITY_OVERRIDES.get(dtype)
+            if priority_hook:
+                override = priority_hook(src)
+                if override is not None:
+                    current_priority = override
 
-            # Pre-compute archetype for class/subclass so the archetype filter works
-            # before enrichment runs (enrich_class/subclass sets it, but that's post-filter)
-            if norm_item.get('_data_type') == 'class' and 'archetype' not in norm_item:
-                from parser_classes import determine_class_archetypes
-                norm_item['archetype'] = determine_class_archetypes(item, all_raw)
-            elif norm_item.get('_data_type') == 'subclass' and 'archetype' not in norm_item:
-                from parser_classes import determine_subclass_archetypes
-                norm_item['archetype'] = determine_subclass_archetypes(item, all_raw)
+            # Allow parsers to inject filterable fields before the dedup/filter pass
+            pre_filter_hook = PRE_FILTER_HOOKS.get(dtype)
+            if pre_filter_hook:
+                pre_filter_hook(norm_item, primary_file, all_raw)
 
             if name_key not in ds_best or current_priority < ds_best[name_key][0]:
                 ds_best[name_key] = (current_priority, norm_item)
@@ -1066,15 +846,14 @@ def generate_html(payload, output_html_path=None):
                     if attune_val not in [v.lower() for v in f_allowed_values]: passed_filters = False
 
                 elif f_key == 'name':
-                    # For class name filtering: a subclass passes if its own name matches OR
-                    # its parent className matches (so filtering "Artificer" includes
-                    # Alchemist, Armorer, etc.)
-                    item_val = str(norm_item.get('name', '')).upper()
+                    # filter_class_name is a list injected by PRE_FILTER_HOOKS for dtypes
+                    # that need multi-name matching (e.g. subclasses match on their own
+                    # name OR their parent className).  For all other dtypes it falls back
+                    # to a single-element list containing the item's own name.
+                    name_candidates = norm_item.get('filter_class_name') or [norm_item.get('name', '')]
                     allowed_upper = [str(v).upper() for v in f_allowed_values]
-                    if item_val not in allowed_upper:
-                        parent_class = str(norm_item.get('className', '')).upper()
-                        if not parent_class or parent_class not in allowed_upper:
-                            passed_filters = False
+                    if not any(str(n).upper() in allowed_upper for n in name_candidates):
+                        passed_filters = False
 
                 else:
                     item_val = norm_item.get(f_key)
@@ -1194,8 +973,9 @@ def generate_html(payload, output_html_path=None):
                 
                 it_table = copy.deepcopy(item)
                 it_table['entries'] = [e]
-                if item.get('_data_type') in ('class', 'subclass'):
-                    it_table['name'] = e.get('name', item.get('name'))
+                # Parsers may set _standalone_name on an entry to override the card title
+                if e.get('_standalone_name'):
+                    it_table['name'] = e['_standalone_name']
                 expanded_items.append(it_table)
             else:
                 current_entries.append(e)
@@ -1378,19 +1158,15 @@ def generate_html(payload, output_html_path=None):
 
             page_str = f"p.{item.get('page', '')}" if item.get('page') else ""
             src_str = f"{item.get('source', 'UNK')} {page_str}".strip()
-            
-            val = format_item_value(item.get('value', ''))
-            cost_str = str(val) if val else ""
-            if str(item.get('rarity', '')).lower() == 'artifact':
-                cost_str = '<span style="font-size: 1.4em;">&infin;</span>'
-                
-            wt = item.get('weight')
-            if wt is None or str(wt).strip().lower() in ('none', ''):
-                weight_str = ""
-            else:
-                wt_str_val = str(wt).strip()
-                weight_str = f"{wt_str_val} lb." if not wt_str_val.endswith('lb.') and not wt_str_val.endswith('lbs.') else wt_str_val
-            
+
+            # Dispatch to dtype-specific footer renderer if one is registered.
+            # The items parser (sentinel key '_items') handles cost and weight.
+            _dtype = item.get('_data_type', '')
+            _footer_renderer = FOOTER_RENDERERS.get(_dtype) or FOOTER_RENDERERS.get('_items')
+            cost_str, weight_str = ('', '')
+            if _footer_renderer:
+                cost_str, weight_str = _footer_renderer(item)
+
             custom_footer_left = clean_tags(item.get('custom_footer_left', ''))
             custom_footer_right = clean_tags(item.get('custom_footer_right', ''))
             
@@ -1400,12 +1176,13 @@ def generate_html(payload, output_html_path=None):
             if cost_str or weight_str:
                 footer_html += f'<div style="display: flex; justify-content: space-between; width: 100%;"><span>{cost_str}</span><span>{weight_str}</span></div>'
             
-            icon_name = item.get('icon_name')
-            if not icon_name:
-                ds_name = item.get('_origin_file', 'items.json')
-                icon_name = resolve_card_icon_name(item, ds_name)
-                
+            # Centralized Icon Resolution
+            icon_name = resolve_card_icon_name(item, item.get('_origin_file', 'items.json'))
             iur = load_svg_as_data_uri(f"{icon_name}.svg")
+
+            # Fail-safe fallback to the triangle glyph if the icon file is missing
+            if not iur:
+                iur = load_svg_as_data_uri("action-triangle-glyph.svg")
             
             html_content.append(f"""
             <div class="card-slot">

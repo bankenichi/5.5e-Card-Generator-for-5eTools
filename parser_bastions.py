@@ -30,9 +30,6 @@ def enrich_bastion(item, type_map=None):
     fac_str = f"{fac_type} Facility" if fac_type else "Facility"
     item['meta_left'] = f"Level {lvl} {fac_str}" if lvl else fac_str
     item['rarity_badge'] = "" # Bastions don't use the top-right rarity letter
-    
-    # Explicitly set the icon name string
-    item['icon_name'] = "bastions"
 
     # 3. Parse specific Bastion stats for the card body
     if item.get('prerequisite'):

@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+  <g transform="translate(15 0)">
+    <path d="M 25 10 A 34 34 0 0 1 25 70 A 26 26 0 0 0 25 10 Z" fill="none" stroke="#5a4a2f" stroke-width="2.2" stroke-linejoin="round"/>
+  </g>
+
+  <g transform="translate(-4 0)">
+    <g transform="translate(33 36) scale(0.6) translate(-48 -40)">
+      <path d="M 48 32 C 45 32, 45 48, 48 48 C 51 48, 51 32, 48 32 Z" fill="none" stroke="#5a4a2f" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M 47 32 Q 40 24 43 16 M 49 32 Q 56 24 53 16" fill="none" stroke="#5a4a2f" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M 44 26 L 41 24 M 43 21 L 40 19 M 52 26 L 55 24 M 53 21 L 56 19" fill="none" stroke="#5a4a2f" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M 46 36 C 28 25, 12 30, 18 45 C 28 45, 38 42, 46 40" fill="none" stroke="#5a4a2f" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M 50 36 C 68 25, 84 30, 78 45 C 68 45, 58 42, 50 40" fill="none" stroke="#5a4a2f" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M 46 40 C 32 50, 32 70, 38 75 C 42 65, 46 55, 47 48" fill="none" stroke="#5a4a2f" stroke-width="2" stroke-linejoin="round"/>
+      <path d="M 50 40 C 64 50, 64 70, 58 75 C 54 65, 50 55, 49 48" fill="none" stroke="#5a4a2f" stroke-width="2" stroke-linejoin="round"/>
+      <circle cx="28" cy="38" r="2.5" fill="none" stroke="#5a4a2f" stroke-width="1.5"/>
+      <circle cx="28" cy="38" r="1" fill="#5a4a2f"/>
+      <circle cx="68" cy="38" r="2.5" fill="none" stroke="#5a4a2f" stroke-width="1.5"/>
+      <circle cx="68" cy="38" r="1" fill="#5a4a2f"/>
+      <path d="M 46 36 L 33 42 M 50 36 L 63 42" fill="none" stroke="#5a4a2f" stroke-width="1.5" stroke-linecap="round"/>
+      <path d="M 46 42 L 40 55 M 50 42 L 56 55" fill="none" stroke="#5a4a2f" stroke-width="1.5" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  
+  <circle cx="34" cy="22" r="1" fill="#5a4a2f"/>
+</svg>

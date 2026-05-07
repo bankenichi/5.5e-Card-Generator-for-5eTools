@@ -1,0 +1,27 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+
+  <!-- Outer -->
+  <circle cx="40" cy="40" r="24" fill="none" stroke="#5a4a2f" stroke-width="2.6"></circle>
+
+  <!-- Inner -->
+  <circle cx="40" cy="40" r="14" fill="none" stroke="#5a4a2f" stroke-width="1.8"></circle>
+
+  <!-- Rays -->
+  <path d="M40 10 V20" fill="none" stroke="#5a4a2f" stroke-width="1.5" stroke-linecap="round"></path>
+
+  <path d="M40 60 V70" fill="none" stroke="#5a4a2f" stroke-width="1.5" stroke-linecap="round"></path>
+
+  <path d="M10 40 H20" fill="none" stroke="#5a4a2f" stroke-width="1.5" stroke-linecap="round"></path>
+
+  <path d="M60 40 H70" fill="none" stroke="#5a4a2f" stroke-width="1.5" stroke-linecap="round"></path>
+
+  <!-- Central glyph -->
+  <path d="M40 28
+           L44 36
+           L52 40
+           L44 44
+           L40 52
+           L36 44
+           L28 40
+           L36 36 Z" fill="none" stroke="#5a4a2f" stroke-width="2" stroke-linejoin="round"></path>
+</svg>

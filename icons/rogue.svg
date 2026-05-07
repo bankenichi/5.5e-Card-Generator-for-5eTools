@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+
+  <!-- Dagger -->
+  <path d="M40 14
+           L48 28
+           L40 66
+           L32 28 Z" fill="none" stroke="#5a4a2f" stroke-width="2.4" stroke-linejoin="round"></path>
+
+  <!-- Guard -->
+  <path d="M26 34 H54" fill="none" stroke="#5a4a2f" stroke-width="2.2" stroke-linecap="round"></path>
+
+  <!-- Eye -->
+  <path d="M18 52
+           Q40 38 62 52" fill="none" stroke="#5a4a2f" stroke-width="1.7" stroke-linecap="round"></path>
+
+</svg>

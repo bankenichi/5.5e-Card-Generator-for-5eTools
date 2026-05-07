@@ -8,7 +8,6 @@ def enrich_psionic(item, type_map=None):
     # Deep cyan theme for psionics
     item['primary_color'] = "#006064"
     item['bg_color'] = "#E0F7FA"
-    item['icon_name'] = "psionics"
     item['rarity_badge'] = ""
     
     p_type = item.get('type', '')

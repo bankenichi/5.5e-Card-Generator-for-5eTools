@@ -7,15 +7,15 @@ def enrich_background(item, type_map=None):
     meta = "Background"
     pc = "#455A64"  # Blue Grey
     bc = "#ECEFF1"
-        
+
     # Apply theme and meta tags
     item['primary_color'] = pc
     item['bg_color'] = bc
     item['rarity_badge'] = ""
     item['meta_left'] = meta
-    
+
     stats = []
-    
+
     skill_profs = item.get('skillProficiencies', [])
     if skill_profs:
         profs = []
@@ -28,11 +28,11 @@ def enrich_background(item, type_map=None):
                     profs.append("Choose")
         if profs:
             stats.append({'type': 'item', 'name': 'Skill Proficiencies', 'entry': ", ".join(profs)})
-            
+
     if stats:
         entries = item.get('entries', [])
         if not isinstance(entries, list):
             entries = [entries]
         item['entries'] = stats + entries
-            
+
     return item

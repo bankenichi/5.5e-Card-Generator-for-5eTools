@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+
+  <!-- Outer ring -->
+  <circle cx="40" cy="40" r="26" fill="none" stroke="#5a4a2f" stroke-width="2.2"></circle>
+
+  <!-- Central node -->
+  <circle cx="40" cy="40" r="5" fill="#5a4a2f"></circle>
+
+  <!-- Path lines -->
+  <path d="M40 40 L24 24" fill="none" stroke="#5a4a2f" stroke-width="1.9" stroke-linecap="round"></path>
+
+  <path d="M40 40 L56 24" fill="none" stroke="#5a4a2f" stroke-width="1.9" stroke-linecap="round"></path>
+
+  <path d="M40 40 L24 56" fill="none" stroke="#5a4a2f" stroke-width="1.9" stroke-linecap="round"></path>
+
+  <path d="M40 40 L56 56" fill="none" stroke="#5a4a2f" stroke-width="1.9" stroke-linecap="round"></path>
+
+  <!-- Nodes -->
+  <circle cx="24" cy="24" r="4" fill="none" stroke="#5a4a2f" stroke-width="1.8"></circle>
+
+  <circle cx="56" cy="24" r="4" fill="none" stroke="#5a4a2f" stroke-width="1.8"></circle>
+
+  <circle cx="24" cy="56" r="4" fill="none" stroke="#5a4a2f" stroke-width="1.8"></circle>
+
+  <circle cx="56" cy="56" r="4" fill="none" stroke="#5a4a2f" stroke-width="1.8"></circle>
+
+  <!-- Arc accents -->
+  <path d="M24 24
+           Q40 8 56 24" fill="none" stroke="#5a4a2f" stroke-width="1.3"></path>
+
+  <path d="M24 56
+           Q40 72 56 56" fill="none" stroke="#5a4a2f" stroke-width="1.3"></path>
+
+</svg>

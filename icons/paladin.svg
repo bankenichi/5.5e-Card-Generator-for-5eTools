@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 80 80" width="80" height="80">
+ 
+<g transform="scale(1.64) translate(-16,-8.6)"> 
+  <!-- Blade -->
+  <path d="M40 12 L40 54" fill="none" stroke="#5a4a2f" stroke-width="2" stroke-linecap="square"></path>
+  <!-- Tip -->
+  <path d="M40 10 L46 20 L40 24 L34 20 Z" fill="none" stroke="#5a4a2f" stroke-width="2" stroke-linejoin="round"></path>
+  <!-- Crossguard -->
+  <path d="M28 38 Q40 32 52 38" fill="none" stroke="#5a4a2f" stroke-width="2.4" stroke-linecap="round"></path>
+  <!-- Halo -->
+  <circle cx="40" cy="30" r="12" fill="none" stroke="#5a4a2f" stroke-width="1.5"></circle>
+  <!-- Grip -->
+  <path d="M36 56 L44 56" fill="none" stroke="#5a4a2f" stroke-width="2.4" stroke-linecap="round"></path>
+</g>
+</svg>

@@ -1,4 +1,10 @@
 import copy
+from parser_utils import META_ONLY_DTYPES
+
+# ---------------------------------------------------------------------------
+# META-ONLY REGISTRATION
+# ---------------------------------------------------------------------------
+META_ONLY_DTYPES.update({'classFeature', 'subclassFeature'})
 
 FEATURE_TYPE_MAP = {
     "EI": "Eldritch Invocation",
@@ -13,7 +19,7 @@ FEATURE_TYPE_MAP = {
     "RN": "Rune",
     "RP": "Renown Perk",
     "PB": "Pact Boon",
-    "MM": "Metamagic" # Added Metamagic mapping
+    "MM": "Metamagic",
 }
 
 def format_prerequisite(prereq):
@@ -34,27 +40,36 @@ def format_prerequisite(prereq):
         parts.append(f"Item: {', '.join(prereq['item'])}")
     if "otherSummary" in prereq:
         parts.append(prereq["otherSummary"].get("entrySummary", ""))
-    
+
     return "; ".join(p for p in parts if p)
 
 def enrich_optional_feature(item, type_map=None):
     result = copy.deepcopy(item)
-    
-    # 1. Determine Meta Label
+
+    # 1. Determine Meta Label from feature type
     f_types = result.get('featureType', [])
     meta = "Optional Feature"
     for ft in f_types:
         if ft in FEATURE_TYPE_MAP:
             meta = FEATURE_TYPE_MAP[ft]
             break
-    
-    # 2. Process Prerequisites into the top of entries
+
+    result['meta_left'] = meta
+
+    # 2. Color scheme — deep teal
+    result['primary_color'] = "#004D40"
+    result['bg_color'] = "#E0F2F1"
+    result['rarity_badge'] = ""
+
+    # 3. Process Prerequisites into the top of entries
     prereqs = result.get('prerequisite', [])
     if prereqs:
         prereq_str = ", ".join(format_prerequisite(p) for p in prereqs)
         if prereq_str:
-            result['entries'].insert(0, f"<i>Prerequisite: {prereq_str}</i>")
+            entries = result.get('entries', [])
+            if not isinstance(entries, list):
+                entries = [entries]
+            result['entries'] = [f"<i>Prerequisite: {prereq_str}</i>"] + entries
 
-    result['meta_left'] = meta
     result['_data_type'] = "optionalfeature"
     return result

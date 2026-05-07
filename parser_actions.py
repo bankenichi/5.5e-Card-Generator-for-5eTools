@@ -37,8 +37,5 @@ def enrich_action(item, type_map=None):
 
     # Actions don't have rarities
     item['rarity_badge'] = ""
-    
-    # Explicitly set the icon name string
-    item['icon_name'] = "action-triangle-glyph"
 
     return item
