@@ -122,3 +122,23 @@ def resolve_card_icon_name(item, dataset_filename):
         
     # Universal Fallback to the triangle glyph
     return 'action-triangle-glyph'
+
+def resolve_watermark_name(item, dataset_filename):
+    """
+    Determines the correct SVG watermark name to use.
+    Currently defaults to the universal emblem, but can be expanded 
+    to use ICON_MAP or custom logic based on the item type/class.
+    """
+    # Future logic can go here (e.g., checking item['_data_type'])
+    
+    # Default fallback
+    return 'watermark-emblem'
+
+def resolve_background_name(item, dataset_filename):
+    """
+    Determines the correct SVG background texture to use.
+    """
+    # Future logic can go here
+    
+    # Default fallback
+    return 'parchment-background'

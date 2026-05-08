@@ -4,3 +4,6 @@ __pycache__/
 *.pyc 
 *.html 
 card_engine_orig.py
+test_error.py
+test_dict2.py
+test_dict.py

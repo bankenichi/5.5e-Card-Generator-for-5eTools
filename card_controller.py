@@ -25,13 +25,21 @@ def get_index_html():
         .dataset-header { background: #f9f9f9; padding: 10px 15px; display: flex; align-items: center; cursor: pointer; font-weight: bold; }
         .dataset-header input[type="checkbox"] { margin-right: 10px; transform: scale(1.2); }
         .subset-panel { display: none; padding: 10px 15px 15px 35px; border-top: 1px solid #e0e0e0; background: #fff; }
-        .subset-category { margin-bottom: 10px; }
+        .subset-category { margin-bottom: 15px; }
         .subset-category strong { display: block; font-size: 0.9em; margin-bottom: 5px; color: #555; }
         .filter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 5px; }
         .filter-grid label { font-size: 0.9em; font-weight: normal; display: flex; align-items: center; cursor: pointer; }
         .filter-grid input { margin-right: 6px; }
-        button { width: 100%; padding: 0.9rem 1rem; margin-top: 1rem; margin-bottom: 1rem; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; background: #2d7aeb; color: white; cursor: pointer; transition: background 0.2s; }
-        button:hover { background: #215ec8; }
+        
+        /* Button Styles */
+        .btn-group { display: flex; gap: 10px; margin-top: 1rem; margin-bottom: 1rem; }
+        .primary-btn { flex: 2; padding: 0.9rem 1rem; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; background: #2d7aeb; color: white; cursor: pointer; transition: background 0.2s; }
+        .primary-btn:hover { background: #215ec8; }
+        .secondary-btn { flex: 1; padding: 0.9rem 1rem; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; background: #e0e0e0; color: #333; cursor: pointer; transition: background 0.2s; }
+        .secondary-btn:hover { background: #ccc; }
+        .clear-small-btn { padding: 4px 10px; margin-top: 8px; font-size: 0.8em; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; color: #555; cursor: pointer; transition: background 0.2s; }
+        .clear-small-btn:hover { background: #ececec; }
+
         .status { padding: 0.75rem 1rem; border-radius: 8px; background: #eef4ff; color: #0b3c79; min-height: 3rem; font-size: 0.95em; }
         a { color: #2d7aeb; font-weight: bold; }
     </style>
@@ -43,7 +51,11 @@ def get_index_html():
         
         <div id="datasets-container"></div>
         
-        <button id="generateBtn">Generate Deck</button>
+        <div class="btn-group">
+            <button id="generateBtn" class="primary-btn">Generate Deck</button>
+            <button id="clearAllBtn" class="secondary-btn">Clear All</button>
+        </div>
+        
         <div id="status" class="status">Ready.</div>
     </div>
 
@@ -84,6 +96,18 @@ def get_index_html():
             "Actions": { file: "generators/5etools/data/actions.json", filters: {} },
             "Backgrounds": { file: "generators/5etools/data/backgrounds.json", filters: {} },
             "Bastions": { file: "generators/5etools/data/bastions.json", filters: { level: ["5", "9", "13", "17"] } },
+            "Bestiary": { 
+                file: [
+                    "generators/5etools/data/bestiary/index.json",
+                    "generators/5etools/data/bestiary/legendarygroups.json",
+                    "generators/5etools/data/bestiary/template.json"
+                ],
+                filters: { 
+                    cr: ["0", "1/8", "1/4", "1/2", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30"],
+                    size: ["T", "S", "M", "L", "H", "G", "C"],
+                    type: ["aberration", "beast", "celestial", "construct", "dragon", "elemental", "fey", "fiend", "giant", "humanoid", "monstrosity", "ooze", "plant", "undead"]
+                }
+            },
             "Classes": { 
                 file: ["generators/5etools/data/class/index.json", "generators/5etools/data/optionalfeatures.json"], 
                 filters: {
@@ -111,7 +135,7 @@ def get_index_html():
             "Items": { file: "generators/5etools/data/items.json", filters: { rarity: ["common", "uncommon", "rare", "very rare", "legendary", "artifact", "none"], attunement: ["yes", "no"] } },
             "Languages": { 
                 file: "generators/5etools/data/languages.json", 
-                filters: { type: ["Standard", "Rare"] } // Added normalized filters
+                filters: { type: ["Standard", "Rare"] } 
             },
             "Optional Features": { 
                 file: "generators/5etools/data/optionalfeatures.json", 
@@ -175,7 +199,9 @@ def get_index_html():
                 Object.entries(data.filters).forEach(([filterKey, filterValues]) => {
                     const catDiv = document.createElement('div');
                     catDiv.className = 'subset-category';
-                    catDiv.innerHTML = `<strong>Filter by ${filterKey.charAt(0).toUpperCase() + filterKey.slice(1)}:</strong>`;
+                    
+                    const filterName = filterKey.charAt(0).toUpperCase() + filterKey.slice(1);
+                    catDiv.innerHTML = `<strong>Filter by ${filterName}:</strong>`;
                     
                     const grid = document.createElement('div');
                     grid.className = 'filter-grid';
@@ -189,7 +215,15 @@ def get_index_html():
                         chk.dataset.datasetName = name;
                         
                         // Map the value to a clean label, or fallback to capitalized default
-                        let displayLabel = labelMap[val] || (val.charAt(0).toUpperCase() + val.slice(1));
+                        let displayLabel = val.charAt(0).toUpperCase() + val.slice(1);
+                        if (filterKey === 'size') {
+                            const sizeMap = {"T": "Tiny", "S": "Small", "M": "Medium", "L": "Large", "H": "Huge", "G": "Gargantuan", "C": "Colossal"};
+                            displayLabel = sizeMap[val] || displayLabel;
+                        } else if (filterKey === 'cr') {
+                            displayLabel = val;
+                        } else {
+                            displayLabel = labelMap[val] || displayLabel;
+                        }
                         
                         lbl.appendChild(chk);
                         lbl.appendChild(document.createTextNode(" " + displayLabel));
@@ -197,6 +231,17 @@ def get_index_html():
                     });
                     
                     catDiv.appendChild(grid);
+                    
+                    // Create Category-Level Clear Button
+                    const clearBtn = document.createElement('button');
+                    clearBtn.className = 'clear-small-btn';
+                    clearBtn.type = 'button';
+                    clearBtn.textContent = `Clear ${filterName}`;
+                    clearBtn.addEventListener('click', () => {
+                        grid.querySelectorAll('input[type="checkbox"]').forEach(chk => chk.checked = false);
+                    });
+                    catDiv.appendChild(clearBtn);
+
                     subsetPanel.appendChild(catDiv);
                 });
             } else {
@@ -210,6 +255,13 @@ def get_index_html():
             checkbox.addEventListener('change', (e) => {
                 subsetPanel.style.display = e.target.checked ? 'block' : 'none';
             });
+        });
+
+        // Global Clear All Logic
+        document.getElementById('clearAllBtn').addEventListener('click', () => {
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            document.querySelectorAll('.subset-panel').forEach(panel => panel.style.display = 'none');
+            document.getElementById('status').textContent = 'All filters and selections cleared.';
         });
 
         // Submit logic

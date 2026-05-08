@@ -21,8 +21,9 @@ from parser_classes import enrich_class, enrich_subclass
 from parser_optionalfeatures import enrich_optional_feature
 from parser_skills import enrich_skill
 from parser_backgrounds import enrich_background
+from parser_monsters import enrich_monster
 from sources import get_source_priority
-from icons import resolve_card_icon_name
+from icons import resolve_card_icon_name, resolve_watermark_name, resolve_background_name
 from parser_languages import enrich_language
 from parser_utils import (
     clean_tags,
@@ -69,7 +70,6 @@ def load_svg_as_data_uri(filename, force_stretch=False):
         _svg_data_uri_cache[cache_key] = ""
         return ""
 
-BG_URI = load_svg_as_data_uri("parchment-background.svg", force_stretch=True)
 DIVIDER_URI = load_svg_as_data_uri("ornamental-divider.svg")
 
 def get_dataset_items(filename):
@@ -93,7 +93,8 @@ def get_dataset_items(filename):
             'deity', 'deities', 'language', 'languages', 'psionic', 'psionics',
             'maneuver', 'maneuvers', 'metamagic', 'deck', 'decks', 'card', 'cards', 'feat', 'race', 'subrace',
             'class', 'subclass', 'classFeature', 'subclassFeature', 'skill', 'skills',
-            'optionalfeature', 'optionalfeatures', 'background', 'backgrounds'
+            'optionalfeature', 'optionalfeatures', 'background', 'backgrounds',
+            'monster', 'legendaryGroup', 'monsterTemplate'
         ]
         matched = False
         for key in valid_root_keys:
@@ -310,6 +311,7 @@ def route_and_enrich(item, base_data_list, type_map, prop_map, raw_dict, all_raw
     elif dtype in ('optionalfeature', 'optionalfeatures'): return enrich_optional_feature(item, type_map)
     elif dtype in ('language', 'languages'): return enrich_language(item, type_map)
     elif dtype in ('background', 'backgrounds'): return enrich_background(item, type_map)
+    elif dtype == 'monster': return enrich_monster(item, type_map, all_raw)
     else: return enrich_item_data(item, base_data_list, type_map, prop_map, raw_dict)
 
 # ---------------------------------------------------------------------------
@@ -652,16 +654,23 @@ def parse_entry_to_html(entry):
                 html += f'<div class="card-nested" style="margin-top: 6px;"><strong class="card-strong">{name_raw}</strong></div>'
             html += '<div class="card-table-block"><table class="card-table">'
             cols = entry.get('colLabels', [])
+            col_styles = entry.get('colStyles', [])
             if cols:
-                html += "<thead><tr>" + "".join(f'<th{"  style=\"white-space:nowrap\"" if len(clean_tags(str(c))) < 10 else ""}>{clean_tags(str(c))}</th>' for c in cols) + "</tr></thead>"
+                th_html = ""
+                for i, c in enumerate(cols):
+                    style_class = f' class="{col_styles[i]}"' if i < len(col_styles) and col_styles[i] else ''
+                    nowrap = ' style="white-space:nowrap"' if len(clean_tags(str(c))) < 10 else ''
+                    th_html += f'<th{style_class}{nowrap}>{clean_tags(str(c))}</th>'
+                html += f"<thead><tr>{th_html}</tr></thead>"
             html += "<tbody>"
             for row in entry.get('rows', []):
                 html += "<tr>"
                 rc = row if isinstance(row, list) else row.get('row', []) if isinstance(row, dict) else [row]
-                for cell in rc:
+                for i, cell in enumerate(rc):
+                    style_class = f' class="{col_styles[i]}"' if i < len(col_styles) and col_styles[i] else ''
                     cell_text = get_cell_text(cell)
                     nowrap = ' style="white-space:nowrap"' if len(cell_text) < 10 else ''
-                    html += f'<td{nowrap}>{cell_text}</td>'
+                    html += f'<td{style_class}{nowrap}>{cell_text}</td>'
                 html += "</tr>"
             html += "</tbody></table></div>"
         elif entry.get('type') == 'list':
@@ -1048,6 +1057,14 @@ def generate_html(payload, output_html_path=None):
             chunks_per_card = 1
             chars_per_line = 45
             
+        if layout_type == 'landscape' and item.get('_data_type') == 'monster':
+            base_target = 30
+            base_max = 40
+            layout_type = 'landscape_two_col'
+            chunks_per_card = 2
+            chars_per_line = 45
+            tl = sum(estimate_lines(x, chars_per_line) for x in flat_de)
+            
         if item.get('custom_footer_left') or item.get('custom_footer_right'):
             base_target -= 3
             base_max -= 3
@@ -1101,7 +1118,8 @@ def generate_html(payload, output_html_path=None):
             .page {{ width: 8.5in; height: 11in; display: grid; grid-template-columns: repeat(3, 2.5in); grid-template-rows: repeat(3, 3.5in); margin: 0 auto; padding: 0.25in 0.5in; page-break-after: always; background-color: white; }}
             .card-slot {{ width: 2.5in; height: 3.5in; display: flex; align-items: center; justify-content: center; position: relative; }}
             .card {{ position: relative; border-style: solid; border-width: 3px; border-radius: 8px; overflow: hidden; display: flex; flex-direction: column; flex-shrink: 0; border-color: var(--primary); background-color: var(--bg); }}
-            .card::before {{ content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: url('{BG_URI}'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center; z-index: 0; }}
+            .card::before {{ content: ""; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: var(--bg-uri); background-size: 100% 100%; background-repeat: no-repeat; background-position: center; z-index: 0; }}
+            .card::after {{ content: ""; position: absolute; top: 50%; left: 50%; width: 75%; height: 75%; transform: translate(-50%, -50%); background-color: var(--primary); mask-image: var(--watermark-uri); -webkit-mask-image: var(--watermark-uri); mask-size: contain; -webkit-mask-size: contain; mask-repeat: no-repeat; -webkit-mask-repeat: no-repeat; mask-position: center; -webkit-mask-position: center; z-index: 0; opacity: 0.25; pointer-events: none; }}
             .portrait {{ width: 2.5in; height: 3.5in; padding: 16px; display: flex; flex-direction: column; }}
             .landscape {{ width: 3.5in; height: 2.5in; transform: rotate(-90deg); padding: 6px 16px; display: flex; flex-direction: column; }}
             .header, .header-divider, .content-wrapper {{ position: relative; z-index: 1; width: 100%; }}
@@ -1122,6 +1140,14 @@ def generate_html(payload, output_html_path=None):
             .card-table th, .card-table td {{ border-color: var(--primary); border: 1px solid; padding: 2px 4px; text-align: left; font-size: 0.9em !important; min-width: 0; max-width: 100%; word-wrap: break-word; white-space: normal; vertical-align: top; }}
             .card-table th {{ color: var(--primary); background-color: rgba(0,0,0,0.05); }}
             .card-table tr {{ break-inside: avoid; page-break-inside: avoid; }}
+            .card-table tbody tr:nth-child(even) {{ background-color: color-mix(in srgb, var(--primary) 10%, transparent); }}
+            
+            .auto-w {{ width: 1%; white-space: nowrap !important; }}
+            .text-center {{ text-align: center !important; }}
+            .text-right {{ text-align: right !important; }}
+            .text-left {{ text-align: left !important; }}
+            .border-0 {{ border: none !important; }}
+            .col-2 {{ width: 16.666% !important; }}
             
             .header-divider {{ display: block; width: min(2in, 100%); max-width: 2in !important; height: 10px !important; flex-shrink: 0; margin: 6px auto; background-color: var(--primary); mask-image: url('{DIVIDER_URI}'); -webkit-mask-image: url('{DIVIDER_URI}'); mask-size: 100% 100%; -webkit-mask-size: 100% 100%; mask-repeat: no-repeat; -webkit-mask-repeat: no-repeat; mask-position: center; -webkit-mask-position: center; }}
             .card-footer {{ display: flex; flex-direction: column; margin-top: auto; padding-top: 6px; color: var(--primary); font-size: 8px; font-weight: bold; z-index: 1; border-top: 1px solid transparent; }}
@@ -1183,10 +1209,22 @@ def generate_html(payload, output_html_path=None):
             # Fail-safe fallback to the triangle glyph if the icon file is missing
             if not iur:
                 iur = load_svg_as_data_uri("action-triangle-glyph.svg")
+                
+            # Centralized Watermark Resolution
+            watermark_name = resolve_watermark_name(item, item.get('_origin_file', 'items.json'))
+            wur = load_svg_as_data_uri(f"{watermark_name}.svg")
+            if not wur:
+                wur = load_svg_as_data_uri("watermark-emblem.svg")
+                
+            # Centralized Background Resolution
+            bg_name = resolve_background_name(item, item.get('_origin_file', 'items.json'))
+            bg_uri = load_svg_as_data_uri(f"{bg_name}.svg", force_stretch=True)
+            if not bg_uri:
+                bg_uri = load_svg_as_data_uri("parchment-background.svg", force_stretch=True)
             
             html_content.append(f"""
             <div class="card-slot">
-                <div class="card {oc}" style="--primary: {pc}; --bg: {bc}; --icon-uri: url('{iur}');">
+                <div class="card {oc}" style="--primary: {pc}; --bg: {bc}; --icon-uri: url('{iur}'); --watermark-uri: url('{wur}'); --bg-uri: url('{bg_uri}');">
                     <div class="header">
                         <div class="icon"></div>
                         <div class="title-box">
