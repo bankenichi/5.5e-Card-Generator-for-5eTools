@@ -1,0 +1,35 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <!-- Squared circle: circle, square, and their geometric mean constructions -->
+  <circle cx="60" cy="60" r="52" fill="none" stroke="#8a7450" stroke-width="1.4" opacity="0.35"/>
+  <circle cx="60" cy="60" r="46" fill="none" stroke="#8a7450" stroke-width="0.6" opacity="0.2"/>
+
+  <!-- Outer square inscribed in circle r=44 -->
+  <polygon points="60,16 104,60 60,104 16,60"
+           fill="none" stroke="#8a7450" stroke-width="1.6" stroke-linejoin="round" opacity="0.38"/>
+
+  <!-- Inner circle inscribed in that square (r = half side = 31.1) -->
+  <circle cx="60" cy="60" r="31" fill="none" stroke="#8a7450" stroke-width="1.2" opacity="0.30"/>
+
+  <!-- Inner square inscribed in that circle -->
+  <polygon points="60,29 91,60 60,91 29,60"
+           fill="none" stroke="#8a7450" stroke-width="1" stroke-linejoin="round" opacity="0.26"/>
+
+  <!-- Innermost circle -->
+  <circle cx="60" cy="60" r="18" fill="none" stroke="#8a7450" stroke-width="0.9" opacity="0.24"/>
+
+  <!-- Diagonal cross connecting outer square corners through centre -->
+  <line x1="16" y1="60" x2="104" y2="60" stroke="#8a7450" stroke-width="0.8" opacity="0.2"/>
+  <line x1="60" y1="16" x2="60"  y2="104" stroke="#8a7450" stroke-width="0.8" opacity="0.2"/>
+
+  <!-- Tick marks at outer ring cardinal points -->
+  <g stroke="#8a7450" stroke-width="2" stroke-linecap="round" opacity="0.4">
+    <line x1="60" y1="6"   x2="60" y2="13"/>
+    <line x1="60" y1="107" x2="60" y2="114"/>
+    <line x1="6"  y1="60"  x2="13" y2="60"/>
+    <line x1="107" y1="60" x2="114" y2="60"/>
+  </g>
+
+  <!-- Centre -->
+  <circle cx="60" cy="60" r="5"   fill="none" stroke="#8a7450" stroke-width="1.2" opacity="0.4"/>
+  <circle cx="60" cy="60" r="2"   fill="#8a7450" opacity="0.36"/>
+</svg>

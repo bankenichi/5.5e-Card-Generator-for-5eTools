@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <!-- Outer pentagon ring -->
+  <polygon points="60,8 108,42 90,96 30,96 12,42" fill="none" stroke="#8a7450" stroke-width="1.4" stroke-linejoin="round" opacity="0.35"/>
+  <!-- Inner pentagon -->
+  <polygon points="60,24 88,46 78,78 42,78 32,46" fill="none" stroke="#8a7450" stroke-width="0.8" stroke-linejoin="round" opacity="0.25"/>
+  <!-- Pentagram lines -->
+  <line x1="60" y1="8" x2="30" y2="96" stroke="#8a7450" stroke-width="0.9" opacity="0.3"/>
+  <line x1="60" y1="8" x2="90" y2="96" stroke="#8a7450" stroke-width="0.9" opacity="0.3"/>
+  <line x1="108" y1="42" x2="30" y2="96" stroke="#8a7450" stroke-width="0.9" opacity="0.3"/>
+  <line x1="108" y1="42" x2="12" y2="42" stroke="#8a7450" stroke-width="0.9" opacity="0.3"/>
+  <line x1="90" y1="96" x2="12" y2="42" stroke="#8a7450" stroke-width="0.9" opacity="0.3"/>
+  <!-- Outer bounding circle -->
+  <circle cx="60" cy="58" r="52" fill="none" stroke="#8a7450" stroke-width="1.0" opacity="0.2"/>
+  <!-- Central eye -->
+  <ellipse cx="60" cy="57" rx="18" ry="10" fill="none" stroke="#8a7450" stroke-width="1.4" opacity="0.45"/>
+  <circle cx="60" cy="57" r="5" fill="none" stroke="#8a7450" stroke-width="1.2" opacity="0.4"/>
+  <circle cx="60" cy="57" r="2" fill="#8a7450" opacity="0.4"/>
+</svg>

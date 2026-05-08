@@ -3,16 +3,16 @@
      width="2.5in" height="3.5in">
   <defs>
     <radialGradient id="bg-vignette" cx="50%" cy="50%" r="72%">
-      <stop offset="0%" stop-color="#f0dda8" stop-opacity="0"/>
-      <stop offset="100%" stop-color="#8a5c18" stop-opacity="0.6"/>
+      <stop offset="0%" stop-color="#e8c870" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#6a4008" stop-opacity="0.6"/>
     </radialGradient>
     <radialGradient id="center-glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#fff8e0" stop-opacity="0.5"/>
-      <stop offset="100%" stop-color="#c8a050" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#fff4c0" stop-opacity="0.55"/>
+      <stop offset="100%" stop-color="#d4a030" stop-opacity="0"/>
     </radialGradient>
     <radialGradient id="emblem-glow" cx="50%" cy="50%" r="50%">
-      <stop offset="0%" stop-color="#d4a830" stop-opacity="0.18"/>
-      <stop offset="100%" stop-color="#8a6020" stop-opacity="0"/>
+      <stop offset="0%" stop-color="#d4a030" stop-opacity="0.18"/>
+      <stop offset="100%" stop-color="#9a6818" stop-opacity="0"/>
     </radialGradient>
     <filter id="paper-noise2" x="0%" y="0%" width="100%" height="100%">
       <feTurbulence type="fractalNoise" baseFrequency="0.4 0.3" numOctaves="4" seed="7" stitchTiles="stitch" result="noise"/>
@@ -23,50 +23,50 @@
   </defs>
 
   <!-- Base parchment -->
-  <rect width="750" height="1050" rx="24" fill="#dfc882"/>
-  <rect width="750" height="1050" rx="24" fill="#cba94a" opacity="0.22"/>
+  <rect width="750" height="1050" rx="24" fill="#e8c060"/>
+  <rect width="750" height="1050" rx="24" fill="#d4a030" opacity="0.30"/>
   <rect width="750" height="1050" rx="24" fill="url(#center-glow)"/>
   <rect width="750" height="1050" rx="24" fill="url(#bg-vignette)"/>
-  <rect width="750" height="1050" rx="24" fill="#b89040" opacity="0.07" filter="url(#paper-noise2)"/>
+  <rect width="750" height="1050" rx="24" fill="#c09020" opacity="0.10" filter="url(#paper-noise2)"/>
 
   <!-- Outer border -->
-  <rect x="18" y="18" width="714" height="1014" rx="18" fill="none" stroke="#7a5c28" stroke-width="3.5" opacity="0.6"/>
+  <rect x="18" y="18" width="714" height="1014" rx="18" fill="none" stroke="#7a5818" stroke-width="3.5" opacity="0.6"/>
   <!-- Inner border -->
-  <rect x="28" y="28" width="694" height="994" rx="14" fill="none" stroke="#7a5c28" stroke-width="1.4" opacity="0.32"/>
+  <rect x="28" y="28" width="694" height="994" rx="14" fill="none" stroke="#7a5818" stroke-width="1.4" opacity="0.32"/>
   <!-- Decorative inner frame -->
-  <rect x="48" y="48" width="654" height="954" rx="10" fill="none" stroke="#7a5c28" stroke-width="0.8" opacity="0.2"/>
+  <rect x="48" y="48" width="654" height="954" rx="10" fill="none" stroke="#7a5818" stroke-width="0.8" opacity="0.2"/>
 
   <!-- Corner ornaments - top left -->
-  <g opacity="0.55" stroke="#6a4c1e" fill="none">
+  <g opacity="0.55" stroke="#6a4818" fill="none">
     <line x1="48" y1="80" x2="48" y2="48" stroke-width="2.5"/>
     <line x1="48" y1="48" x2="80" y2="48" stroke-width="2.5"/>
     <line x1="55" y1="88" x2="55" y2="55" stroke-width="1"/>
     <line x1="55" y1="55" x2="88" y2="55" stroke-width="1"/>
-    <circle cx="55" cy="55" r="3" fill="#6a4c1e"/>
+    <circle cx="55" cy="55" r="3" fill="#6a4818"/>
   </g>
   <!-- Corner ornaments - top right -->
-  <g opacity="0.55" stroke="#6a4c1e" fill="none">
+  <g opacity="0.55" stroke="#6a4818" fill="none">
     <line x1="702" y1="80" x2="702" y2="48" stroke-width="2.5"/>
     <line x1="702" y1="48" x2="670" y2="48" stroke-width="2.5"/>
     <line x1="695" y1="88" x2="695" y2="55" stroke-width="1"/>
     <line x1="695" y1="55" x2="662" y2="55" stroke-width="1"/>
-    <circle cx="695" cy="55" r="3" fill="#6a4c1e"/>
+    <circle cx="695" cy="55" r="3" fill="#6a4818"/>
   </g>
   <!-- Corner ornaments - bottom left -->
-  <g opacity="0.55" stroke="#6a4c1e" fill="none">
+  <g opacity="0.55" stroke="#6a4818" fill="none">
     <line x1="48" y1="970" x2="48" y2="1002" stroke-width="2.5"/>
     <line x1="48" y1="1002" x2="80" y2="1002" stroke-width="2.5"/>
     <line x1="55" y1="962" x2="55" y2="995" stroke-width="1"/>
     <line x1="55" y1="995" x2="88" y2="995" stroke-width="1"/>
-    <circle cx="55" cy="995" r="3" fill="#6a4c1e"/>
+    <circle cx="55" cy="995" r="3" fill="#6a4818"/>
   </g>
   <!-- Corner ornaments - bottom right -->
-  <g opacity="0.55" stroke="#6a4c1e" fill="none">
+  <g opacity="0.55" stroke="#6a4818" fill="none">
     <line x1="702" y1="970" x2="702" y2="1002" stroke-width="2.5"/>
     <line x1="702" y1="1002" x2="670" y2="1002" stroke-width="2.5"/>
     <line x1="695" y1="962" x2="695" y2="995" stroke-width="1"/>
     <line x1="695" y1="995" x2="662" y2="995" stroke-width="1"/>
-    <circle cx="695" cy="995" r="3" fill="#6a4c1e"/>
+    <circle cx="695" cy="995" r="3" fill="#6a4818"/>
   </g>
 
   <!-- Central emblem glow -->
@@ -75,71 +75,71 @@
   <!-- Large central watermark emblem -->
   <g opacity="0.32" transform="translate(375,525)">
     <!-- Outer rings -->
-    <circle cx="0" cy="0" r="240" fill="none" stroke="#6a4c1e" stroke-width="2.5"/>
-    <circle cx="0" cy="0" r="228" fill="none" stroke="#6a4c1e" stroke-width="0.8"/>
-    <circle cx="0" cy="0" r="200" fill="none" stroke="#6a4c1e" stroke-width="1.2"/>
+    <circle cx="0" cy="0" r="240" fill="none" stroke="#6a4818" stroke-width="2.5"/>
+    <circle cx="0" cy="0" r="228" fill="none" stroke="#6a4818" stroke-width="0.8"/>
+    <circle cx="0" cy="0" r="200" fill="none" stroke="#6a4818" stroke-width="1.2"/>
     <!-- Outer triangle -->
-    <polygon points="0,-210 182,105 -182,105" fill="none" stroke="#6a4c1e" stroke-width="3.5" stroke-linejoin="round"/>
+    <polygon points="0,-210 182,105 -182,105" fill="none" stroke="#6a4818" stroke-width="3.5" stroke-linejoin="round"/>
     <!-- Inner triangle -->
-    <polygon points="0,-120 104,60 -104,60" fill="none" stroke="#6a4c1e" stroke-width="2" stroke-linejoin="round"/>
+    <polygon points="0,-120 104,60 -104,60" fill="none" stroke="#6a4818" stroke-width="2" stroke-linejoin="round"/>
     <!-- Star lines from center -->
-    <line x1="0" y1="-200" x2="0" y2="-240" stroke="#6a4c1e" stroke-width="1.5"/>
-    <line x1="173" y1="100" x2="208" y2="120" stroke="#6a4c1e" stroke-width="1.5"/>
-    <line x1="-173" y1="100" x2="-208" y2="120" stroke="#6a4c1e" stroke-width="1.5"/>
+    <line x1="0" y1="-200" x2="0" y2="-240" stroke="#6a4818" stroke-width="1.5"/>
+    <line x1="173" y1="100" x2="208" y2="120" stroke="#6a4818" stroke-width="1.5"/>
+    <line x1="-173" y1="100" x2="-208" y2="120" stroke="#6a4818" stroke-width="1.5"/>
     <!-- Cardinal tick marks -->
-    <line x1="0" y1="-228" x2="0" y2="-240" stroke="#6a4c1e" stroke-width="2"/>
-    <line x1="228" y1="0" x2="240" y2="0" stroke="#6a4c1e" stroke-width="2"/>
-    <line x1="-228" y1="0" x2="-240" y2="0" stroke="#6a4c1e" stroke-width="2"/>
-    <line x1="0" y1="228" x2="0" y2="240" stroke="#6a4c1e" stroke-width="2"/>
+    <line x1="0" y1="-228" x2="0" y2="-240" stroke="#6a4818" stroke-width="2"/>
+    <line x1="228" y1="0" x2="240" y2="0" stroke="#6a4818" stroke-width="2"/>
+    <line x1="-228" y1="0" x2="-240" y2="0" stroke="#6a4818" stroke-width="2"/>
+    <line x1="0" y1="228" x2="0" y2="240" stroke="#6a4818" stroke-width="2"/>
     <!-- Inner dot -->
-    <circle cx="0" cy="0" r="8" fill="none" stroke="#6a4c1e" stroke-width="2"/>
-    <circle cx="0" cy="0" r="3" fill="#6a4c1e"/>
+    <circle cx="0" cy="0" r="8" fill="none" stroke="#6a4818" stroke-width="2"/>
+    <circle cx="0" cy="0" r="3" fill="#6a4818"/>
     <!-- Diagonal ornament lines -->
-    <line x1="-240" y1="-240" x2="-195" y2="-195" stroke="#6a4c1e" stroke-width="0.8" opacity="0.5"/>
-    <line x1="240" y1="-240" x2="195" y2="-195" stroke="#6a4c1e" stroke-width="0.8" opacity="0.5"/>
-    <line x1="-240" y1="240" x2="-195" y2="195" stroke="#6a4c1e" stroke-width="0.8" opacity="0.5"/>
-    <line x1="240" y1="240" x2="195" y2="195" stroke="#6a4c1e" stroke-width="0.8" opacity="0.5"/>
+    <line x1="-240" y1="-240" x2="-195" y2="-195" stroke="#6a4818" stroke-width="0.8" opacity="0.5"/>
+    <line x1="240" y1="-240" x2="195" y2="-195" stroke="#6a4818" stroke-width="0.8" opacity="0.5"/>
+    <line x1="-240" y1="240" x2="-195" y2="195" stroke="#6a4818" stroke-width="0.8" opacity="0.5"/>
+    <line x1="240" y1="240" x2="195" y2="195" stroke="#6a4818" stroke-width="0.8" opacity="0.5"/>
   </g>
 
   <!-- Top ornamental divider -->
-  <g transform="translate(75,93) scale(3,3)" fill="#6a4c1e" stroke="#6a4c1e" opacity="0.65">
+  <g transform="translate(75,93) scale(3,3)" fill="#6a4818" stroke="#6a4818" opacity="0.65">
     <path d="M100,1 L103.5,5 L100,9 L96.5,5 Z" fill="none" stroke-width="1.2" stroke-linejoin="round"/>
-    <circle cx="100" cy="5" r="1" fill="#6a4c1e" stroke="none"/>
-    <path d="M91,3 L93,5 L91,7 L89,5 Z" fill="#6a4c1e" stroke="none"/>
-    <path d="M109,3 L111,5 L109,7 L107,5 Z" fill="#6a4c1e" stroke="none"/>
+    <circle cx="100" cy="5" r="1" fill="#6a4818" stroke="none"/>
+    <path d="M91,3 L93,5 L91,7 L89,5 Z" fill="#6a4818" stroke="none"/>
+    <path d="M109,3 L111,5 L109,7 L107,5 Z" fill="#6a4818" stroke="none"/>
     <path d="M85,5 Q79,1.5 73,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
     <path d="M85,5 Q79,8.5 73,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
-    <circle cx="79" cy="5" r="0.8" fill="#6a4c1e" stroke="none"/>
+    <circle cx="79" cy="5" r="0.8" fill="#6a4818" stroke="none"/>
     <path d="M73,5 Q67,1.5 61,5 T49,5 L8,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
     <path d="M115,5 Q121,1.5 127,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
     <path d="M115,5 Q121,8.5 127,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
-    <circle cx="121" cy="5" r="0.8" fill="#6a4c1e" stroke="none"/>
+    <circle cx="121" cy="5" r="0.8" fill="#6a4818" stroke="none"/>
     <path d="M127,5 Q133,1.5 139,5 T151,5 L192,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
-    <circle cx="4" cy="5" r="1.2" fill="#6a4c1e" stroke="none"/>
-    <circle cx="196" cy="5" r="1.2" fill="#6a4c1e" stroke="none"/>
+    <circle cx="4" cy="5" r="1.2" fill="#6a4818" stroke="none"/>
+    <circle cx="196" cy="5" r="1.2" fill="#6a4818" stroke="none"/>
   </g>
 
   <!-- Bottom ornamental divider -->
-  <g transform="translate(75,957) scale(3,-3)" fill="#6a4c1e" stroke="#6a4c1e" opacity="0.65">
+  <g transform="translate(75,957) scale(3,-3)" fill="#6a4818" stroke="#6a4818" opacity="0.65">
     <path d="M100,1 L103.5,5 L100,9 L96.5,5 Z" fill="none" stroke-width="1.2" stroke-linejoin="round"/>
-    <circle cx="100" cy="5" r="1" fill="#6a4c1e" stroke="none"/>
-    <path d="M91,3 L93,5 L91,7 L89,5 Z" fill="#6a4c1e" stroke="none"/>
-    <path d="M109,3 L111,5 L109,7 L107,5 Z" fill="#6a4c1e" stroke="none"/>
+    <circle cx="100" cy="5" r="1" fill="#6a4818" stroke="none"/>
+    <path d="M91,3 L93,5 L91,7 L89,5 Z" fill="#6a4818" stroke="none"/>
+    <path d="M109,3 L111,5 L109,7 L107,5 Z" fill="#6a4818" stroke="none"/>
     <path d="M85,5 Q79,1.5 73,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
     <path d="M85,5 Q79,8.5 73,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
-    <circle cx="79" cy="5" r="0.8" fill="#6a4c1e" stroke="none"/>
+    <circle cx="79" cy="5" r="0.8" fill="#6a4818" stroke="none"/>
     <path d="M73,5 Q67,1.5 61,5 T49,5 L8,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
     <path d="M115,5 Q121,1.5 127,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
     <path d="M115,5 Q121,8.5 127,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
-    <circle cx="121" cy="5" r="0.8" fill="#6a4c1e" stroke="none"/>
+    <circle cx="121" cy="5" r="0.8" fill="#6a4818" stroke="none"/>
     <path d="M127,5 Q133,1.5 139,5 T151,5 L192,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
-    <circle cx="4" cy="5" r="1.2" fill="#6a4c1e" stroke="none"/>
-    <circle cx="196" cy="5" r="1.2" fill="#6a4c1e" stroke="none"/>
+    <circle cx="4" cy="5" r="1.2" fill="#6a4818" stroke="none"/>
+    <circle cx="196" cy="5" r="1.2" fill="#6a4818" stroke="none"/>
   </g>
 
   <!-- Age spots -->
-  <ellipse cx="100" cy="160" rx="42" ry="24" fill="#b08030" opacity="0.06"/>
-  <ellipse cx="650" cy="890" rx="52" ry="28" fill="#906820" opacity="0.07"/>
+  <ellipse cx="100" cy="160" rx="42" ry="24" fill="#a07020" opacity="0.06"/>
+  <ellipse cx="650" cy="890" rx="52" ry="28" fill="#906010" opacity="0.07"/>
   <ellipse cx="680" cy="200" rx="28" ry="18" fill="#c09040" opacity="0.05"/>
   <ellipse cx="70" cy="820" rx="36" ry="22" fill="#a07030" opacity="0.06"/>
 </svg>

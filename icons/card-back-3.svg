@@ -1,0 +1,108 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 1050" width="2.5in" height="3.5in">
+  <defs>
+    <radialGradient id="cb3-bg" cx="50%" cy="50%" r="72%">
+      <stop offset="0%"   stop-color="#f0dda8" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#8a5c18" stop-opacity="0.6"/>
+    </radialGradient>
+    <radialGradient id="cb3-glow" cx="50%" cy="48%" r="48%">
+      <stop offset="0%"   stop-color="#fff8e0" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#c8a050" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="cb3-noise" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.4 0.3" numOctaves="4" seed="11" stitchTiles="stitch" result="n"/>
+      <feColorMatrix type="saturate" values="0" in="n" result="gn"/>
+      <feBlend in="SourceGraphic" in2="gn" mode="multiply" result="b"/>
+      <feComposite in="b" in2="SourceGraphic" operator="in"/>
+    </filter>
+  </defs>
+  <!-- Parchment base -->
+  <rect width="750" height="1050" rx="24" fill="#dfc882"/>
+  <rect width="750" height="1050" rx="24" fill="#cba94a" opacity="0.22"/>
+  <rect width="750" height="1050" rx="24" fill="url(#cb3-glow)"/>
+  <rect width="750" height="1050" rx="24" fill="url(#cb3-bg)"/>
+  <rect width="750" height="1050" rx="24" fill="#b89040" opacity="0.07" filter="url(#cb3-noise)"/>
+  <!-- Borders -->
+  <rect x="18" y="18" width="714" height="1014" rx="18" fill="none" stroke="#7a5c28" stroke-width="3.5" opacity="0.6"/>
+  <rect x="28" y="28" width="694" height="994"  rx="14" fill="none" stroke="#7a5c28" stroke-width="1.4" opacity="0.32"/>
+  <rect x="44" y="44" width="662" height="962"  rx="10" fill="none" stroke="#7a5c28" stroke-width="0.7" opacity="0.18"/>
+
+  <!-- Corner bracket ornaments -->
+  <g stroke="#6a4c1e" fill="none" opacity="0.5">
+    <polyline points="44,120 44,44 120,44"     stroke-width="2.5"/>
+    <polyline points="706,120 706,44 630,44"   stroke-width="2.5"/>
+    <polyline points="44,930 44,1006 120,1006" stroke-width="2.5"/>
+    <polyline points="706,930 706,1006 630,1006" stroke-width="2.5"/>
+    <!-- Inner echo -->
+    <polyline points="60,112 60,60 112,60"     stroke-width="1"/>
+    <polyline points="690,112 690,60 638,60"   stroke-width="1"/>
+    <polyline points="60,938 60,990 112,990"   stroke-width="1"/>
+    <polyline points="690,938 690,990 638,990" stroke-width="1"/>
+  </g>
+
+  <!-- ── Arcane pentagram centred at 375,525 ── -->
+  <g transform="translate(375,525)" opacity="0.3" stroke="#6a4c1e" fill="none">
+    <!-- Outer ring pair -->
+    <circle cx="0" cy="0" r="252" stroke-width="2.2"/>
+    <circle cx="0" cy="0" r="240" stroke-width="0.8"/>
+    <!-- Pentagon outline -->
+    <polygon points="0,-240 228,-74 141,194 -141,194 -228,-74"
+             stroke-width="1.8" stroke-linejoin="round"/>
+    <!-- Pentagram star -->
+    <polygon points="0,-240 141,194 -228,-74 228,-74 -141,194"
+             stroke-width="1.4" stroke-linejoin="round"/>
+    <!-- Inner pentagon -->
+    <polygon points="0,-88 84,-27 52,71 -52,71 -84,-27"
+             stroke-width="1" stroke-linejoin="round"/>
+    <!-- Rune tick marks around ring (10 evenly spaced) -->
+    <line x1="0"    y1="-240" x2="0"    y2="-252" stroke-width="2.5"/>
+    <line x1="228"  y1="-74"  x2="239"  y2="-77"  stroke-width="2.5"/>
+    <line x1="141"  y1="194"  x2="148"  y2="204"  stroke-width="2.5"/>
+    <line x1="-141" y1="194"  x2="-148" y2="204"  stroke-width="2.5"/>
+    <line x1="-228" y1="-74"  x2="-239" y2="-77"  stroke-width="2.5"/>
+    <!-- Minor ticks -->
+    <line x1="119"  y1="-209" x2="124"  y2="-218" stroke-width="1.2"/>
+    <line x1="-119" y1="-209" x2="-124" y2="-218" stroke-width="1.2"/>
+    <line x1="240"  y1="50"   x2="251"  y2="52"   stroke-width="1.2"/>
+    <line x1="-240" y1="50"   x2="-251" y2="52"   stroke-width="1.2"/>
+    <line x1="0"    y1="240"  x2="0"    y2="252"  stroke-width="1.2"/>
+    <!-- Center -->
+    <circle cx="0" cy="0" r="18" stroke-width="1.6"/>
+    <circle cx="0" cy="0" r="7"  fill="#6a4c1e" stroke="none"/>
+  </g>
+
+  <g transform="translate(75,93) scale(3,3)" fill="#6a4c1e" stroke="#6a4c1e" opacity="0.65">
+    <path d="M100,1 L103.5,5 L100,9 L96.5,5 Z" fill="none" stroke-width="1.2" stroke-linejoin="round"/>
+    <circle cx="100" cy="5" r="1" fill="#6a4c1e" stroke="none"/>
+    <path d="M91,3 L93,5 L91,7 L89,5 Z" fill="#6a4c1e" stroke="none"/>
+    <path d="M109,3 L111,5 L109,7 L107,5 Z" fill="#6a4c1e" stroke="none"/>
+    <path d="M85,5 Q79,1.5 73,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M85,5 Q79,8.5 73,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
+    <circle cx="79" cy="5" r="0.8" fill="#6a4c1e" stroke="none"/>
+    <path d="M73,5 Q67,1.5 61,5 T49,5 L8,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M115,5 Q121,1.5 127,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M115,5 Q121,8.5 127,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
+    <circle cx="121" cy="5" r="0.8" fill="#6a4c1e" stroke="none"/>
+    <path d="M127,5 Q133,1.5 139,5 T151,5 L192,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
+    <circle cx="4" cy="5" r="1.2" fill="#6a4c1e" stroke="none"/>
+    <circle cx="196" cy="5" r="1.2" fill="#6a4c1e" stroke="none"/>
+  </g>
+  <g transform="translate(75,957) scale(3,-3)" fill="#6a4c1e" stroke="#6a4c1e" opacity="0.65">
+    <path d="M100,1 L103.5,5 L100,9 L96.5,5 Z" fill="none" stroke-width="1.2" stroke-linejoin="round"/>
+    <circle cx="100" cy="5" r="1" fill="#6a4c1e" stroke="none"/>
+    <path d="M91,3 L93,5 L91,7 L89,5 Z" fill="#6a4c1e" stroke="none"/>
+    <path d="M109,3 L111,5 L109,7 L107,5 Z" fill="#6a4c1e" stroke="none"/>
+    <path d="M85,5 Q79,1.5 73,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M85,5 Q79,8.5 73,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
+    <circle cx="79" cy="5" r="0.8" fill="#6a4c1e" stroke="none"/>
+    <path d="M73,5 Q67,1.5 61,5 T49,5 L8,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M115,5 Q121,1.5 127,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
+    <path d="M115,5 Q121,8.5 127,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
+    <circle cx="121" cy="5" r="0.8" fill="#6a4c1e" stroke="none"/>
+    <path d="M127,5 Q133,1.5 139,5 T151,5 L192,5" fill="none" stroke-width="1.2" stroke-linecap="round"/>
+    <circle cx="4" cy="5" r="1.2" fill="#6a4c1e" stroke="none"/>
+    <circle cx="196" cy="5" r="1.2" fill="#6a4c1e" stroke="none"/>
+  </g>
+  <!-- Age spots -->
+  <ellipse cx="680" cy="180" rx="38" ry="20" fill="#b08030" opacity="0.06"/>
+  <ellipse cx="80"  cy="880" rx="48" ry="26" fill="#906820" opacity="0.07"/>
+</svg>

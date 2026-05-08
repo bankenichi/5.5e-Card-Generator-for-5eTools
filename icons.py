@@ -85,20 +85,14 @@ def resolve_card_icon_name(item, dataset_filename):
     cat_value = str(item.get('category') or item.get('type') or '').lower().strip()
 
     # 1. SMART CLASS INTERCEPTOR
-    # Handles split cards ("Barbarian 1/4"), tables ("Barbarian Progression"), 
-    # and subclasses via their meta_left ("Artificer Subclass").
     if dtype in ('class', 'classes', 'subclass', 'subclasses'):
         parent_class = str(item.get('className', '')).lower().strip()
-        
         for c in CORE_CLASSES:
-            # If the core class name is anywhere in the card's title, meta, or original parent name
             if c in name or c in meta or c in parent_class:
                 return ICON_MAP.get(c, 'classes')
-        
-        # If it's a homebrew class we haven't mapped yet, fallback to crossed swords
         return ICON_MAP.get('classes', 'classes')
 
-    # 2. Check Meta Label (highest specificity for features/maneuvers)
+    # 2. Check Meta Label
     if meta in ICON_MAP:
         return ICON_MAP[meta]
 
@@ -115,30 +109,22 @@ def resolve_card_icon_name(item, dataset_filename):
     if dtype in ICON_MAP:
         return ICON_MAP[dtype]
             
-    # 5. Check origin dataset filename (Fallback for generic items)
+    # 5. Check origin dataset filename
     dataset_key = os.path.basename(dataset_filename).lower()
     if 'items' in dataset_key:
         return 'items'
         
-    # Universal Fallback to the triangle glyph
+    # Universal Fallback
     return 'action-triangle-glyph'
 
 def resolve_watermark_name(item, dataset_filename):
-    """
-    Determines the correct SVG watermark name to use.
-    Currently defaults to the universal emblem, but can be expanded 
-    to use ICON_MAP or custom logic based on the item type/class.
-    """
-    # Future logic can go here (e.g., checking item['_data_type'])
-    
-    # Default fallback
     return 'watermark-emblem'
 
 def resolve_background_name(item, dataset_filename):
-    """
-    Determines the correct SVG background texture to use.
-    """
-    # Future logic can go here
-    
-    # Default fallback
     return 'parchment-background'
+
+def resolve_card_back_name(payload=None):
+    return 'card-back'
+
+def resolve_divider_name(item, dataset_filename):
+    return 'ornamental-divider'

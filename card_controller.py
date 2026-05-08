@@ -6,13 +6,56 @@ from http.server import SimpleHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse
 
 # Import the core engine logic
-from card_engine import generate_html
+from card_engine import generate_html, generate_backs_html
+
+# ---------------------------------------------------------------------------
+# ICON DIRECTORY SCANNER
+# ---------------------------------------------------------------------------
+SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+CWD = os.getcwd()
+possible_dirs = [os.path.join(SCRIPT_DIR, "icons"), os.path.join(CWD, "icons")]
+ICON_DIR = next((d for d in possible_dirs if os.path.isdir(d)), possible_dirs[0])
+
+def get_available_svgs():
+    bg_files, wm_files, cb_files = [], [], []
+    if os.path.isdir(ICON_DIR):
+        for f in os.listdir(ICON_DIR):
+            if f.endswith('.svg'):
+                fl = f.lower()
+                # Tightened to parchment-background to avoid grabbing backgrounds.svg
+                if 'parchment-background' in fl: bg_files.append(f)
+                if 'watermark' in fl: wm_files.append(f)
+                if 'card-back' in fl or 'cardback' in fl: cb_files.append(f)
+                
+    # Sort alphabetically first
+    bg_files = sorted(list(set(bg_files)))
+    wm_files = sorted(list(set(wm_files)))
+    cb_files = sorted(list(set(cb_files)))
+
+    # Force the core defaults to the top of the list
+    if 'parchment-background.svg' in bg_files:
+        bg_files.remove('parchment-background.svg')
+    bg_files.insert(0, 'parchment-background.svg')
+
+    if 'watermark-emblem.svg' in wm_files:
+        wm_files.remove('watermark-emblem.svg')
+    wm_files.insert(0, 'watermark-emblem.svg')
+
+    if 'card-back.svg' in cb_files:
+        cb_files.remove('card-back.svg')
+    cb_files.insert(0, 'card-back.svg')
+
+    return json.dumps({
+        "backgrounds": bg_files,
+        "watermarks": wm_files,
+        "cardBacks": cb_files
+    })
 
 # ---------------------------------------------------------------------------
 # CONTROLLER UI & SERVER
 # ---------------------------------------------------------------------------
-def get_index_html():
-    return """<!DOCTYPE html>
+def get_index_html(svg_options_json):
+    html = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -21,21 +64,38 @@ def get_index_html():
         body { font-family: Arial, sans-serif; margin: 2rem; background: #f4f4f4; color: #111; }
         .panel { max-width: 600px; margin: auto; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
         h1 { margin-top: 0; font-size: 1.6rem; }
-        .dataset-group { margin-bottom: 1rem; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; }
+        
+        .dataset-group { margin-bottom: 1rem; border: 1px solid #e0e0e0; border-radius: 8px; overflow: hidden; background: #fff; }
         .dataset-header { background: #f9f9f9; padding: 10px 15px; display: flex; align-items: center; cursor: pointer; font-weight: bold; }
         .dataset-header input[type="checkbox"] { margin-right: 10px; transform: scale(1.2); }
         .subset-panel { display: none; padding: 10px 15px 15px 35px; border-top: 1px solid #e0e0e0; background: #fff; }
         .subset-category { margin-bottom: 15px; }
         .subset-category strong { display: block; font-size: 0.9em; margin-bottom: 5px; color: #555; }
+        
         .filter-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(120px, 1fr)); gap: 5px; }
         .filter-grid label { font-size: 0.9em; font-weight: normal; display: flex; align-items: center; cursor: pointer; }
         .filter-grid input { margin-right: 6px; }
         
+        /* Options & Uploads */
+        .options-panel { padding: 15px; background: #fafafa; }
+        .uploads-panel { padding: 15px; border-top: 2px solid #eee; }
+        .upload-row { display: flex; gap: 15px; margin-top: 10px; flex-wrap: wrap; }
+        .upload-col { flex: 1; min-width: 140px; }
+        .upload-col label { display: block; font-weight: bold; margin-bottom: 4px; font-size: 0.95em; }
+        .upload-col .help-text { display: block; font-size: 0.75em; color: #777; margin-bottom: 8px; }
+        .upload-col input[type="file"], .upload-col select { width: 100%; font-size: 0.85em; padding: 5px; border: 1px solid #ccc; border-radius: 4px; background: #fff; }
+        .upload-col input[type="file"] { border-style: dashed; cursor: pointer; background: #fafafa; }
+        
+        /* Previews */
+        .preview-box { width: 100%; aspect-ratio: 2.5 / 3.5; margin-top: 10px; border: 1px solid #ddd; border-radius: 6px; background-color: #f0f0f0; background-repeat: no-repeat; background-position: center; transition: opacity 0.2s; }
+        
         /* Button Styles */
-        .btn-group { display: flex; gap: 10px; margin-top: 1rem; margin-bottom: 1rem; }
-        .primary-btn { flex: 2; padding: 0.9rem 1rem; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; background: #2d7aeb; color: white; cursor: pointer; transition: background 0.2s; }
+        .btn-group { display: flex; gap: 10px; margin-top: 1.5rem; margin-bottom: 1rem; flex-wrap: wrap; }
+        .primary-btn { flex: 2; min-width: 150px; padding: 0.9rem 1rem; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; background: #2d7aeb; color: white; cursor: pointer; transition: background 0.2s; }
         .primary-btn:hover { background: #215ec8; }
-        .secondary-btn { flex: 1; padding: 0.9rem 1rem; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; background: #e0e0e0; color: #333; cursor: pointer; transition: background 0.2s; }
+        .success-btn { flex: 2; min-width: 150px; padding: 0.9rem 1rem; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; background: #2e7d32; color: white; cursor: pointer; transition: background 0.2s; }
+        .success-btn:hover { background: #1b5e20; }
+        .secondary-btn { flex: 1; min-width: 100px; padding: 0.9rem 1rem; border: none; border-radius: 8px; font-size: 1.1rem; font-weight: bold; background: #e0e0e0; color: #333; cursor: pointer; transition: background 0.2s; }
         .secondary-btn:hover { background: #ccc; }
         .clear-small-btn { padding: 4px 10px; margin-top: 8px; font-size: 0.8em; border: 1px solid #ddd; border-radius: 4px; background: #f9f9f9; color: #555; cursor: pointer; transition: background 0.2s; }
         .clear-small-btn:hover { background: #ececec; }
@@ -51,8 +111,54 @@ def get_index_html():
         
         <div id="datasets-container"></div>
         
+        <div class="dataset-group">
+            <div class="options-panel">
+                <h3 style="margin: 0 0 5px 0;">Visual Options</h3>
+                <span style="font-size: 0.85em; color: #666;">Select built-in graphics from your icons folder.</span>
+                
+                <div class="upload-row">
+                    <div class="upload-col">
+                        <label>Background</label>
+                        <select id="sel-bg"></select>
+                        <div class="preview-box" id="prev-bg" style="background-size: cover;"></div>
+                    </div>
+                    <div class="upload-col">
+                        <label>Watermark</label>
+                        <select id="sel-wm"></select>
+                        <div class="preview-box" id="prev-wm" style="background-size: contain; width: 60%; margin-left: auto; margin-right: auto; border: none; background-color: transparent;"></div>
+                    </div>
+                    <div class="upload-col">
+                        <label>Card Back</label>
+                        <select id="sel-cb"></select>
+                        <div class="preview-box" id="prev-cb" style="background-size: cover;"></div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="uploads-panel">
+                <h3 style="margin: 0 0 5px 0;">Custom Overrides</h3>
+                <span style="font-size: 0.85em; color: #666;">Upload custom SVGs to manually override the selections above.</span>
+                
+                <div class="upload-row">
+                    <div class="upload-col">
+                        <span class="help-text">2.5"x3.5" (750x1050px)</span>
+                        <input type="file" id="custom-bg" accept=".svg" />
+                    </div>
+                    <div class="upload-col">
+                        <span class="help-text">120x120px emblem</span>
+                        <input type="file" id="custom-wm" accept=".svg" />
+                    </div>
+                    <div class="upload-col">
+                        <span class="help-text">2.5"x3.5" (750x1050px)</span>
+                        <input type="file" id="custom-cb" accept=".svg" />
+                    </div>
+                </div>
+            </div>
+        </div>
+        
         <div class="btn-group">
             <button id="generateBtn" class="primary-btn">Generate Deck</button>
+            <button id="generateBacksBtn" class="success-btn">Generate Backs</button>
             <button id="clearAllBtn" class="secondary-btn">Clear All</button>
         </div>
         
@@ -60,36 +166,13 @@ def get_index_html():
     </div>
 
     <script>
-        // Clean display names mapping (maps backend values to UI labels)
         const labelMap = {
-            "0": "Cantrips",
-            "A": "Abjuration",
-            "C": "Conjuration",
-            "D": "Divination",
-            "E": "Enchantment",
-            "I": "Illusion",
-            "N": "Necromancy",
-            "T": "Transmutation",
-            "V": "Evocation",
-            "str": "Strength",
-            "dex": "Dexterity",
-            "con": "Constitution",
-            "int": "Intelligence",
-            "wis": "Wisdom",
-            "cha": "Charisma",
-            "EI": "Eldritch Invocations",
-            "AI": "Artificer Infusions",
-            "AS": "Arcane Shots",
-            "ED": "Elemental Disciplines",
-            "FS:F": "Fighting Styles",
-            "RN": "Rune Knight Runes",
-            "PB": "Pact Boons",
-            "MV:B": "Battle Master Maneuvers",
-            "MM": "Metamagic",
-            "RP": "Renown Perks",
-            "none": "None / Other",
-            "yes": "Requires Attunement",
-            "no": "No Attunement"
+            "0": "Cantrips", "A": "Abjuration", "C": "Conjuration", "D": "Divination", "E": "Enchantment", 
+            "I": "Illusion", "N": "Necromancy", "T": "Transmutation", "V": "Evocation", "str": "Strength", 
+            "dex": "Dexterity", "con": "Constitution", "int": "Intelligence", "wis": "Wisdom", "cha": "Charisma",
+            "EI": "Eldritch Invocations", "AI": "Artificer Infusions", "AS": "Arcane Shots", "ED": "Elemental Disciplines",
+            "FS:F": "Fighting Styles", "RN": "Rune Knight Runes", "PB": "Pact Boons", "MV:B": "Battle Master Maneuvers",
+            "MM": "Metamagic", "RP": "Renown Perks", "none": "None / Other", "yes": "Requires Attunement", "no": "No Attunement"
         };
 
         const DATASETS = {
@@ -97,51 +180,20 @@ def get_index_html():
             "Backgrounds": { file: "generators/5etools/data/backgrounds.json", filters: {} },
             "Bastions": { file: "generators/5etools/data/bastions.json", filters: { level: ["5", "9", "13", "17"] } },
             "Bestiary": { 
-                file: [
-                    "generators/5etools/data/bestiary/index.json",
-                    "generators/5etools/data/bestiary/legendarygroups.json",
-                    "generators/5etools/data/bestiary/template.json"
-                ],
-                filters: { 
-                    cr: ["0", "1/8", "1/4", "1/2", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30"],
-                    size: ["T", "S", "M", "L", "H", "G", "C"],
-                    type: ["aberration", "beast", "celestial", "construct", "dragon", "elemental", "fey", "fiend", "giant", "humanoid", "monstrosity", "ooze", "plant", "undead"]
-                }
+                file: ["generators/5etools/data/bestiary/index.json", "generators/5etools/data/bestiary/legendarygroups.json", "generators/5etools/data/bestiary/template.json"],
+                filters: { cr: ["0", "1/8", "1/4", "1/2", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30"], size: ["T", "S", "M", "L", "H", "G", "C"], type: ["aberration", "beast", "celestial", "construct", "dragon", "elemental", "fey", "fiend", "giant", "humanoid", "monstrosity", "ooze", "plant", "undead"] }
             },
             "Classes": { 
                 file: ["generators/5etools/data/class/index.json", "generators/5etools/data/optionalfeatures.json"], 
-                filters: {
-                    name: ["Artificer", "Barbarian", "Bard", "Cleric", "Druid", "Fighter", "Monk", "Paladin", "Ranger", "Rogue", "Sorcerer", "Warlock", "Wizard"],
-                    archetype: ["Spellcaster", "Half-Caster", "Martial", "Gish / Subclass Caster"]
-                } 
+                filters: { name: ["Artificer", "Barbarian", "Bard", "Cleric", "Druid", "Fighter", "Monk", "Paladin", "Ranger", "Rogue", "Sorcerer", "Warlock", "Wizard"], archetype: ["Spellcaster", "Half-Caster", "Martial", "Gish / Subclass Caster"] } 
             },
             "Conditions / Diseases": { file: "generators/5etools/data/conditionsdiseases.json", filters: {} },
             "Decks": { file: "generators/5etools/data/decks.json", filters: {} },
-            "Deities": { 
-                file: "generators/5etools/data/deities.json", 
-                filters: { 
-                    pantheon: [
-                        "Celtic", "Dawn War", "Dragonlance", "Drow", "Duergar", "Dwarven", 
-                        "Eberron", "Egyptian", "Elven", "Exandria", "Faerûnian", "Forgotten Realms", 
-                        "Gnome", "Gnomish", "Greek", "Greyhawk", "Halfling", "Nonhuman", 
-                        "Norse", "Orc", "Theros", "Yuan-ti"
-                    ] 
-                } 
-            },
-            "Feats": { 
-                file: "generators/5etools/data/feats.json", 
-                filters: { category: ["General Feat", "Origin Feat", "Epic Boon", "Fighting Style"] } 
-            },
+            "Deities": { file: "generators/5etools/data/deities.json", filters: { pantheon: ["Celtic", "Dawn War", "Dragonlance", "Drow", "Duergar", "Dwarven", "Eberron", "Egyptian", "Elven", "Exandria", "Faerûnian", "Forgotten Realms", "Gnome", "Gnomish", "Greek", "Greyhawk", "Halfling", "Nonhuman", "Norse", "Orc", "Theros", "Yuan-ti"] } },
+            "Feats": { file: "generators/5etools/data/feats.json", filters: { category: ["General Feat", "Origin Feat", "Epic Boon", "Fighting Style"] } },
             "Items": { file: "generators/5etools/data/items.json", filters: { rarity: ["common", "uncommon", "rare", "very rare", "legendary", "artifact", "none"], attunement: ["yes", "no"] } },
-            "Languages": { 
-                file: "generators/5etools/data/languages.json", 
-                filters: { type: ["Standard", "Rare"] } 
-            },
-            "Optional Features": { 
-                file: "generators/5etools/data/optionalfeatures.json", 
-                subtitle: "(Invocations, Infusions, Maneuvers, Fighting Styles, etc.)",
-                filters: { featureType: ["EI", "AI", "AS", "ED", "FS:F", "RN", "PB", "MV:B", "MM", "RP"] } 
-            },
+            "Languages": { file: "generators/5etools/data/languages.json", filters: { type: ["Standard", "Rare"] } },
+            "Optional Features": { file: "generators/5etools/data/optionalfeatures.json", subtitle: "(Invocations, Infusions, Maneuvers, Fighting Styles, etc.)", filters: { featureType: ["EI", "AI", "AS", "ED", "FS:F", "RN", "PB", "MV:B", "MM", "RP"] } },
             "Psionics": { file: "generators/5etools/data/psionics.json", filters: {} },
             "Races": { file: "generators/5etools/data/races.json", filters: {} },
             "Skills": { file: "generators/5etools/data/skills.json", filters: { ability: ["str", "dex", "con", "int", "wis", "cha"] } },
@@ -151,7 +203,6 @@ def get_index_html():
 
         const container = document.getElementById('datasets-container');
 
-        // Render UI
         Object.entries(DATASETS).forEach(([name, data]) => {
             const group = document.createElement('div');
             group.className = 'dataset-group';
@@ -176,7 +227,6 @@ def get_index_html():
             titleSpan.innerText = name;
             label.appendChild(titleSpan);
 
-            // Add the subtitle below the main label if it exists
             if (data.subtitle) {
                 const subSpan = document.createElement('span');
                 subSpan.innerText = data.subtitle;
@@ -199,7 +249,6 @@ def get_index_html():
                 Object.entries(data.filters).forEach(([filterKey, filterValues]) => {
                     const catDiv = document.createElement('div');
                     catDiv.className = 'subset-category';
-                    
                     const filterName = filterKey.charAt(0).toUpperCase() + filterKey.slice(1);
                     catDiv.innerHTML = `<strong>Filter by ${filterName}:</strong>`;
                     
@@ -214,7 +263,6 @@ def get_index_html():
                         chk.dataset.filterKey = filterKey;
                         chk.dataset.datasetName = name;
                         
-                        // Map the value to a clean label, or fallback to capitalized default
                         let displayLabel = val.charAt(0).toUpperCase() + val.slice(1);
                         if (filterKey === 'size') {
                             const sizeMap = {"T": "Tiny", "S": "Small", "M": "Medium", "L": "Large", "H": "Huge", "G": "Gargantuan", "C": "Colossal"};
@@ -231,8 +279,6 @@ def get_index_html():
                     });
                     
                     catDiv.appendChild(grid);
-                    
-                    // Create Category-Level Clear Button
                     const clearBtn = document.createElement('button');
                     clearBtn.className = 'clear-small-btn';
                     clearBtn.type = 'button';
@@ -251,23 +297,90 @@ def get_index_html():
             group.appendChild(subsetPanel);
             container.appendChild(group);
 
-            // Toggle logic
             checkbox.addEventListener('change', (e) => {
                 subsetPanel.style.display = e.target.checked ? 'block' : 'none';
             });
         });
 
+        // Setup Visual Options & Previews
+        const svgOptions = __SVG_OPTIONS__;
+        
+        function setupSelect(id, options, defaultVal, previewId) {
+            const sel = document.getElementById(id);
+            const prev = document.getElementById(previewId);
+            
+            const autoOpt = document.createElement('option');
+            autoOpt.value = 'Default';
+            autoOpt.textContent = 'Default';
+            sel.appendChild(autoOpt);
+            
+            options.forEach(opt => {
+                const o = document.createElement('option');
+                o.value = opt;
+                o.textContent = opt;
+                if (opt === defaultVal) o.selected = true;
+                sel.appendChild(o);
+            });
+            
+            sel.addEventListener('change', () => {
+                if (sel.value === 'Default') {
+                    prev.style.backgroundImage = `url('/icons/${defaultVal}')`;
+                    prev.style.opacity = '0.5';
+                } else {
+                    prev.style.backgroundImage = `url('/icons/${sel.value}')`;
+                    prev.style.opacity = '1';
+                }
+            });
+            
+            sel.dispatchEvent(new Event('change'));
+        }
+        
+        setupSelect('sel-bg', svgOptions.backgrounds, 'parchment-background.svg', 'prev-bg');
+        setupSelect('sel-wm', svgOptions.watermarks, 'watermark-emblem.svg', 'prev-wm');
+        setupSelect('sel-cb', svgOptions.cardBacks, 'card-back.svg', 'prev-cb');
+
         // Global Clear All Logic
         document.getElementById('clearAllBtn').addEventListener('click', () => {
             document.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+            document.querySelectorAll('input[type="file"]').forEach(file => file.value = "");
             document.querySelectorAll('.subset-panel').forEach(panel => panel.style.display = 'none');
-            document.getElementById('status').textContent = 'All filters and selections cleared.';
+            
+            // Reset Dropdowns
+            document.getElementById('sel-bg').value = 'parchment-background.svg';
+            document.getElementById('sel-wm').value = 'watermark-emblem.svg';
+            document.getElementById('sel-cb').value = 'card-back.svg';
+            ['sel-bg', 'sel-wm', 'sel-cb'].forEach(id => document.getElementById(id).dispatchEvent(new Event('change')));
+            
+            document.getElementById('status').textContent = 'All filters and files cleared.';
         });
 
-        // Submit logic
+        // Helper to read uploaded files as base64 Data URLs
+        const readFileAsDataURL = (file) => {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = e => resolve(e.target.result);
+                reader.onerror = e => reject(e);
+                reader.readAsDataURL(file);
+            });
+        };
+
+        // Submit Fronts
         const status = document.getElementById('status');
         document.getElementById('generateBtn').addEventListener('click', async () => {
-            const payload = { datasets: [] };
+            const payload = { 
+                datasets: [], 
+                customAssets: {},
+                selectedAssets: {
+                    background: document.getElementById('sel-bg').value,
+                    watermark: document.getElementById('sel-wm').value,
+                    cardBack: document.getElementById('sel-cb').value
+                }
+            };
+            
+            const bgFile = document.getElementById('custom-bg').files[0];
+            const wmFile = document.getElementById('custom-wm').files[0];
+            if (bgFile) payload.customAssets.background = await readFileAsDataURL(bgFile);
+            if (wmFile) payload.customAssets.watermark = await readFileAsDataURL(wmFile);
             
             document.querySelectorAll('.dataset-header input[type="checkbox"]:checked').forEach(cb => {
                 const name = cb.value;
@@ -309,23 +422,66 @@ def get_index_html():
                 status.textContent = 'Error: ' + error;
             }
         });
+
+        // Submit Backs
+        document.getElementById('generateBacksBtn').addEventListener('click', async () => {
+            const payload = { 
+                customAssets: {},
+                selectedAssets: { cardBack: document.getElementById('sel-cb').value }
+            };
+            const cbFile = document.getElementById('custom-cb').files[0];
+            if (cbFile) payload.customAssets.cardBack = await readFileAsDataURL(cbFile);
+
+            status.textContent = 'Generating 3x3 Card Backs...';
+            try {
+                const response = await fetch('/generate_backs', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                status.innerHTML = await response.text();
+            } catch (error) {
+                status.textContent = 'Error: ' + error;
+            }
+        });
     </script>
 </body>
 </html>"""
+    return html.replace('__SVG_OPTIONS__', svg_options_json)
 
 class GeneratorRequestHandler(SimpleHTTPRequestHandler):
     def do_GET(self):
         parsed = urlparse(self.path)
         if parsed.path == '/': 
+            svg_options = get_available_svgs()
             self.send_response(200)
             self.send_header('Content-Type', 'text/html; charset=utf-8')
             self.end_headers()
-            self.wfile.write(get_index_html().encode('utf-8'))
+            self.wfile.write(get_index_html(svg_options).encode('utf-8'))
             return
+            
+        # Custom route to serve the SVG previews from the icons folder reliably
+        elif parsed.path.startswith('/icons/'):
+            filename = os.path.basename(parsed.path)
+            filepath = os.path.join(ICON_DIR, filename)
+            if os.path.exists(filepath):
+                self.send_response(200)
+                self.send_header('Content-Type', 'image/svg+xml')
+                self.end_headers()
+                with open(filepath, 'rb') as f:
+                    self.wfile.write(f.read())
+                return
+            else:
+                self.send_response(404)
+                self.end_headers()
+                return
+                
         super().do_GET()
 
     def do_POST(self):
         parsed = urlparse(self.path)
+        
+        # Route for normal card fronts
         if parsed.path == '/generate':
             content_length = int(self.headers['Content-Length'])
             post_data = self.rfile.read(content_length)
@@ -345,7 +501,6 @@ class GeneratorRequestHandler(SimpleHTTPRequestHandler):
                     ic = result["item_count"]
                     tc = result["type_counts"]
                     
-                    # Sort types by count descending for a clean UI
                     sorted_tc = sorted(tc.items(), key=lambda item: item[1], reverse=True)
                     badges = "".join([f'<span style="display: inline-block; background: #d0def4; color: #0b3c79; padding: 3px 8px; border-radius: 12px; font-size: 0.8em; margin: 0 4px 4px 0;"><strong>{k}:</strong> {v}</span>' for k, v in sorted_tc])
                     
@@ -361,6 +516,34 @@ class GeneratorRequestHandler(SimpleHTTPRequestHandler):
                     self.wfile.write(html_resp.encode('utf-8'))
                 else: 
                     self.wfile.write(b'<p style="color: #d32f2f;">No cards matched your filter criteria.</p>')
+            except Exception as e:
+                self.send_response(500)
+                self.end_headers()
+                self.wfile.write(f'Server Error: {str(e)}'.encode('utf-8'))
+            return
+            
+        # Route for card backs
+        if parsed.path == '/generate_backs':
+            content_length = int(self.headers['Content-Length'])
+            post_data = self.rfile.read(content_length)
+            
+            try:
+                payload = json.loads(post_data.decode('utf-8'))
+                output_filename = "Custom_Deck_Backs.html"
+                
+                generate_backs_html(payload, output_html_path=output_filename)
+                
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.end_headers()
+                
+                html_resp = f'''
+                <div style="margin-bottom: 10px;">
+                    <span style="font-size: 1.1em; color: #111;">Success! Generated a printable page of Card Backs.</span>
+                </div>
+                <p><a href="/{output_filename}" target="_blank" style="text-decoration: none; font-weight: bold; background: #2e7d32; color: #fff; padding: 8px 16px; border-radius: 6px;">Open Card Backs</a></p>
+                '''
+                self.wfile.write(html_resp.encode('utf-8'))
             except Exception as e:
                 self.send_response(500)
                 self.end_headers()

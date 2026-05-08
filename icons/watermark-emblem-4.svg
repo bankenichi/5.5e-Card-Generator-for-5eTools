@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <!-- Sri Yantra inspired: nested triangles pointing up and down, concentric rings -->
+  <circle cx="60" cy="60" r="52" fill="none" stroke="#8a7450" stroke-width="1.4" opacity="0.35"/>
+  <circle cx="60" cy="60" r="46" fill="none" stroke="#8a7450" stroke-width="0.6" opacity="0.22"/>
+
+  <!-- Upward triangles -->
+  <polygon points="60,14 100,76 20,76"
+           fill="none" stroke="#8a7450" stroke-width="1.8" stroke-linejoin="round" opacity="0.42"/>
+  <polygon points="60,26 90,68 30,68"
+           fill="none" stroke="#8a7450" stroke-width="1.2" stroke-linejoin="round" opacity="0.32"/>
+  <polygon points="60,38 80,60 40,60"
+           fill="none" stroke="#8a7450" stroke-width="0.9" stroke-linejoin="round" opacity="0.26"/>
+
+  <!-- Downward triangles -->
+  <polygon points="60,106 20,44 100,44"
+           fill="none" stroke="#8a7450" stroke-width="1.8" stroke-linejoin="round" opacity="0.42"/>
+  <polygon points="60,94 30,52 90,52"
+           fill="none" stroke="#8a7450" stroke-width="1.2" stroke-linejoin="round" opacity="0.32"/>
+
+  <!-- Inner square -->
+  <rect x="46" y="46" width="28" height="28"
+        fill="none" stroke="#8a7450" stroke-width="0.8" stroke-linejoin="round" opacity="0.22"
+        transform="rotate(45,60,60)"/>
+
+  <!-- Centre -->
+  <circle cx="60" cy="60" r="4"   fill="none" stroke="#8a7450" stroke-width="1.2" opacity="0.38"/>
+  <circle cx="60" cy="60" r="1.8" fill="#8a7450" opacity="0.38"/>
+</svg>

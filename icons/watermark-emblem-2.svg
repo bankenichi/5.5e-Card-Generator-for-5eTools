@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" width="120" height="120">
+  <!-- Outer double ring -->
+  <circle cx="60" cy="60" r="54" fill="none" stroke="#8a7450" stroke-width="1.2" opacity="0.35"/>
+  <circle cx="60" cy="60" r="48" fill="none" stroke="#8a7450" stroke-width="0.6" opacity="0.25"/>
+  <!-- 8-point compass star -->
+  <polygon points="60,10 64,48 100,60 64,72 60,110 56,72 20,60 56,48"
+           fill="none" stroke="#8a7450" stroke-width="1.6" stroke-linejoin="round" opacity="0.45"/>
+  <!-- Inner diamond -->
+  <polygon points="60,30 80,60 60,90 40,60"
+           fill="none" stroke="#8a7450" stroke-width="1.2" stroke-linejoin="round" opacity="0.35"/>
+  <!-- Center cross hairs -->
+  <line x1="60" y1="6"  x2="60" y2="18"  stroke="#8a7450" stroke-width="1.2" opacity="0.3"/>
+  <line x1="60" y1="102" x2="60" y2="114" stroke="#8a7450" stroke-width="1.2" opacity="0.3"/>
+  <line x1="6"  y1="60" x2="18" y2="60"  stroke="#8a7450" stroke-width="1.2" opacity="0.3"/>
+  <line x1="102" y1="60" x2="114" y2="60" stroke="#8a7450" stroke-width="1.2" opacity="0.3"/>
+  <!-- Center circle -->
+  <circle cx="60" cy="60" r="7"  fill="none" stroke="#8a7450" stroke-width="1.2" opacity="0.4"/>
+  <circle cx="60" cy="60" r="2.5" fill="#8a7450" opacity="0.35"/>
+  <!-- Diagonal tick marks at 45° -->
+  <line x1="22" y1="22" x2="30" y2="30" stroke="#8a7450" stroke-width="0.8" opacity="0.25"/>
+  <line x1="90" y1="22" x2="98" y2="30" stroke="#8a7450" stroke-width="0.8" opacity="0.25" transform="scale(-1,1) translate(-120,0)"/>
+  <line x1="22" y1="98" x2="30" y2="90" stroke="#8a7450" stroke-width="0.8" opacity="0.25"/>
+  <line x1="90" y1="98" x2="98" y2="90" stroke="#8a7450" stroke-width="0.8" opacity="0.25" transform="scale(-1,1) translate(-120,0)"/>
+</svg>

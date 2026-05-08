@@ -23,7 +23,13 @@ from parser_skills import enrich_skill
 from parser_backgrounds import enrich_background
 from parser_monsters import enrich_monster
 from sources import get_source_priority
-from icons import resolve_card_icon_name, resolve_watermark_name, resolve_background_name
+from icons import (
+    resolve_card_icon_name, 
+    resolve_watermark_name, 
+    resolve_background_name, 
+    resolve_card_back_name, 
+    resolve_divider_name
+)
 from parser_languages import enrich_language
 from parser_utils import (
     clean_tags,
@@ -33,11 +39,6 @@ from parser_utils import (
     NORMALIZE_TYPE_HOOKS,
     FOOTER_RENDERERS,
 )
-
-# ---------------------------------------------------------------------------
-# DATA MAPS
-# ---------------------------------------------------------------------------
-
 
 # ---------------------------------------------------------------------------
 # ASSET LOADERS
@@ -69,8 +70,6 @@ def load_svg_as_data_uri(filename, force_stretch=False):
     except Exception:
         _svg_data_uri_cache[cache_key] = ""
         return ""
-
-DIVIDER_URI = load_svg_as_data_uri("ornamental-divider.svg")
 
 def get_dataset_items(filename):
     if not os.path.exists(filename): return []
@@ -236,15 +235,7 @@ def get_inherited_val(item, key, default=None):
         return item['inherits'].get(key, default)
     return default
 
-# ---------------------------------------------------------------------------
-# TYPE NORMALIZER
-# ---------------------------------------------------------------------------
-
 def _normalize_type(item):
-    """
-    Dispatches to a parser-registered hook for dtype-specific type normalization.
-    Falls back to the raw item['type'] value for unregistered dtypes.
-    """
     dtype = item.get('_data_type', '')
     hook = NORMALIZE_TYPE_HOOKS.get(dtype)
     if hook:
@@ -279,7 +270,6 @@ def normalize_item(item, raw_dict, item_entry_dict=None):
         'entries': entries
     })
     return result
-
 
 # ---------------------------------------------------------------------------
 # CONDENSER ENGINE UTILS
@@ -429,12 +419,8 @@ def estimate_lines(e, chars_per_line):
         if 'entries' in e: return sum(estimate_lines(sub, chars_per_line) for sub in e['entries']) + 1
     return 1
 
-# ---------------------------------------------------------------------------
-# SPLITTING ENGINE
-# ---------------------------------------------------------------------------
 def split_item_by_lines(flat_entries, target_lines=38, absolute_max=46, chars_per_line=45):
     chunks, current_chunk, current_lines = [], [], 0
-    
     queue = list(enumerate(flat_entries))
     
     while queue:
@@ -451,7 +437,6 @@ def split_item_by_lines(flat_entries, target_lines=38, absolute_max=46, chars_pe
         if isinstance(e, dict) and e.get('type') == 'table':
             unbreakable = e.get('_unbreakable', False)
 
-            # --- CONSECUTIVE TABLE PUSH ---
             if current_chunk and isinstance(current_chunk[-1], dict) and current_chunk[-1].get('type') == 'table':
                 chunks.append(current_chunk)
                 current_chunk = []
@@ -470,7 +455,6 @@ def split_item_by_lines(flat_entries, target_lines=38, absolute_max=46, chars_pe
                 current_lines += e_lines
             else:
                 current_table_rows, local_lines = [], 3
-                
                 row_limit = 14 if current_lines >= 6 else 16
                 
                 for r_idx, row in enumerate(rows):
@@ -536,23 +520,18 @@ def split_item_by_lines(flat_entries, target_lines=38, absolute_max=46, chars_pe
             exceeds_abs = (current_lines + e_lines > absolute_max)
             
             if ((exceeds_target and current_lines >= (target_lines * 0.6)) or exceeds_abs or force_split) and current_chunk and not last_h:
-                
                 space_left = target_lines - current_lines
                 
                 if isinstance(e, str) and space_left >= 3 and e_lines > space_left:
                     tokens = tokenize_text(e)
                     split_idx = int(len(tokens) * (space_left / e_lines))
-                    
                     if 0 < split_idx < len(tokens):
                         part1 = " ".join(tokens[:split_idx])
                         part2 = " ".join(tokens[split_idx:])
-                        
                         current_chunk.append(part1)
                         chunks.append(current_chunk)
-                        
                         current_chunk = []
                         current_lines = 0
-                        
                         queue.insert(0, (e_idx, part2))
                         continue
                         
@@ -560,45 +539,32 @@ def split_item_by_lines(flat_entries, target_lines=38, absolute_max=46, chars_pe
                     text = e.get('entry', '')
                     tokens = tokenize_text(text)
                     split_idx = int(len(tokens) * (space_left / e_lines))
-                    
                     if 0 < split_idx < len(tokens):
                         part1_text = " ".join(tokens[:split_idx])
                         part2_text = " ".join(tokens[split_idx:])
-                        
                         part1 = copy.deepcopy(e)
                         part1['entry'] = part1_text
-                        
                         part2 = copy.deepcopy(e)
                         part2['type'] = 'indented_string' 
                         part2['entry'] = part2_text
-                        
                         current_chunk.append(part1)
                         chunks.append(current_chunk)
-                        
                         current_chunk = []
                         current_lines = 0
-                        
                         queue.insert(0, (e_idx, part2))
                         continue
                 
                 chunks.append(current_chunk)
                 current_chunk = []
                 current_lines = 0
-                    
                 current_chunk.append(e); current_lines += e_lines
             else:
                 current_chunk.append(e); current_lines += e_lines
                 
     if current_chunk: chunks.append(current_chunk)
-    
-    if not chunks:
-        chunks.append([])
-        
+    if not chunks: chunks.append([])
     return chunks
 
-# ---------------------------------------------------------------------------
-# RENDER UTILS
-# ---------------------------------------------------------------------------
 def get_table_metrics(flat_entries):
     max_cols, max_chars, max_cell, has_table = 0, 0, 0, False
     for entry in flat_entries:
@@ -688,33 +654,29 @@ def parse_entry_to_html(entry):
         for e in entry: html += parse_entry_to_html(e)
     return html
 
-# ---------------------------------------------------------------------------
-# MAIN GENERATOR
-# ---------------------------------------------------------------------------
 def generate_html(payload, output_html_path=None):
     if output_html_path is None:
         output_html_path = "Custom_Deck_Cards.html"
 
+    custom_assets = payload.get('customAssets', {})
+    selected_assets = payload.get('selectedAssets', {})
+    
     items = []
     base_data_list = []
-
     raw_dict = {}
     type_map = {}
     prop_map = {}
     item_entry_dict = {}
-
     all_raw_global = []
 
     datasets_req = payload.get('datasets', [])
     if not datasets_req: return {"card_count": 0}
 
     for ds_info in datasets_req:
-        # Support file being a string or a list of files (e.g. Classes + optionalfeatures)
         dataset_files = ds_info['file'] if isinstance(ds_info['file'], list) else [ds_info['file']]
         primary_file = dataset_files[0]
         filters = ds_info.get('filters', {})
 
-        # Load raw items from all declared files for this dataset
         raw_items = []
         for dataset_filename in dataset_files:
             raw_items.extend(get_dataset_items(dataset_filename))
@@ -729,7 +691,6 @@ def generate_html(payload, output_html_path=None):
         all_raw = raw_items + base_items + magic_items
         all_raw_global.extend(all_raw)
 
-        # --- GENERIC SUPPLEMENTAL DATA BUILDER ---
         supplemental_data = {}
         for raw in all_raw:
             if isinstance(raw, dict) and not raw.get('_data_type'):
@@ -777,25 +738,13 @@ def generate_html(payload, output_html_path=None):
                 raw_dict[(n, s)] = item; raw_dict[n] = item
 
         is_items_dataset = 'items' in os.path.basename(primary_file).lower()
-        # Only process cards from the primary file(s); supplemental files (optionalfeatures etc.)
-        # are reference data for enrichment only — they don't generate their own cards here.
         primary_raw_items = get_dataset_items(primary_file)
         items_to_process = all_raw if is_items_dataset else primary_raw_items
 
-        # STRICT META TYPE BLOCK
-        # Dtypes that are purely reference/lookup data and never generate cards.
-        # Parsers may extend this set via parser_utils.META_ONLY_DTYPES.
         from parser_utils import META_ONLY_DTYPES
         meta_types = META_ONLY_DTYPES
 
-        # ---------------------------------------------------------------------------
-        # PASS 1 — Normalize and deduplicate by best source BEFORE filtering.
-        # Guarantees filter results are consistent regardless of which filter values
-        # are selected: the same winner is chosen for each name every time, and only
-        # that winner is checked against the filter.
-        # ---------------------------------------------------------------------------
-        ds_best = {}  # name_key -> (priority, norm_item)
-
+        ds_best = {}  
         for item in items_to_process:
             if not isinstance(item, dict): continue
             if item.get('_data_type') in meta_types: continue
@@ -805,20 +754,16 @@ def generate_html(payload, output_html_path=None):
             if not norm_item: continue
 
             src = norm_item['source']
-            name_up = norm_item['name'].upper()
-
             name_key = norm_item.get('name', '').lower().strip()
             dtype = norm_item.get('_data_type', '')
             current_priority = get_source_priority(src)
 
-            # Allow parsers to override source priority for their dtype
             priority_hook = SOURCE_PRIORITY_OVERRIDES.get(dtype)
             if priority_hook:
                 override = priority_hook(src)
                 if override is not None:
                     current_priority = override
 
-            # Allow parsers to inject filterable fields before the dedup/filter pass
             pre_filter_hook = PRE_FILTER_HOOKS.get(dtype)
             if pre_filter_hook:
                 pre_filter_hook(norm_item, primary_file, all_raw)
@@ -826,9 +771,6 @@ def generate_html(payload, output_html_path=None):
             if name_key not in ds_best or current_priority < ds_best[name_key][0]:
                 ds_best[name_key] = (current_priority, norm_item)
 
-        # ---------------------------------------------------------------------------
-        # PASS 2 — Apply filters to the deduplicated winners only, then collect.
-        # ---------------------------------------------------------------------------
         for name_key, (_, norm_item) in ds_best.items():
             passed_filters = True
             for f_key, f_allowed_values in filters.items():
@@ -840,14 +782,12 @@ def generate_html(payload, output_html_path=None):
 
                 elif f_key == 'rarity':
                     item_val = str(norm_item.get('rarity', '')).lower().strip()
-                    # Normalize all non-standard rarity values to 'none'
                     _known_rarities = {'common', 'uncommon', 'rare', 'very rare', 'legendary', 'artifact'}
                     if item_val not in _known_rarities:
                         item_val = 'none'
                     if item_val not in [v.lower() for v in f_allowed_values]: passed_filters = False
 
                 elif f_key == 'attunement':
-                    # reqAttune: truthy value (True/str) = requires attunement; falsy/absent = no attunement
                     req = norm_item.get('reqAttune')
                     if req is None and isinstance(norm_item.get('inherits'), dict):
                         req = norm_item['inherits'].get('reqAttune')
@@ -855,10 +795,6 @@ def generate_html(payload, output_html_path=None):
                     if attune_val not in [v.lower() for v in f_allowed_values]: passed_filters = False
 
                 elif f_key == 'name':
-                    # filter_class_name is a list injected by PRE_FILTER_HOOKS for dtypes
-                    # that need multi-name matching (e.g. subclasses match on their own
-                    # name OR their parent className).  For all other dtypes it falls back
-                    # to a single-element list containing the item's own name.
                     name_candidates = norm_item.get('filter_class_name') or [norm_item.get('name', '')]
                     allowed_upper = [str(v).upper() for v in f_allowed_values]
                     if not any(str(n).upper() in allowed_upper for n in name_candidates):
@@ -873,7 +809,6 @@ def generate_html(payload, output_html_path=None):
                         if str(item_val).upper() not in [str(v).upper() for v in f_allowed_values]: passed_filters = False
 
             if not passed_filters: continue
-
             norm_item['_origin_file'] = primary_file
             items.append(norm_item)
 
@@ -883,8 +818,6 @@ def generate_html(payload, output_html_path=None):
     for item in items:
         if not isinstance(item, dict): continue
         name_key = item.get('name', '').lower().strip()
-        # Items are already deduplicated per-dataset; this merges across datasets
-        # (e.g. Spells + Items both selected) using source priority.
         source = item.get('source', '')
         origin_file = item.get('_origin_file', '')
         dedup_key = f"{origin_file}_{name_key}"
@@ -912,7 +845,6 @@ def generate_html(payload, output_html_path=None):
     condensed_items = []
     for group in grouped_items.values():
         base_item, variants, v_type = group['base'], group['variants'], group['variant_type']
-        
         base_has_text = False
         if base_item:
             b_flat = flatten_entries(base_item.get('entries', []))
@@ -967,7 +899,6 @@ def generate_html(payload, output_html_path=None):
             
     condensed_items = final_list
 
-    # --- ISOLATE STANDALONE TABLES INTO SEPARATE ITEMS ---
     expanded_items = []
     for item in condensed_items:
         de = item.get('entries', [])
@@ -982,7 +913,6 @@ def generate_html(payload, output_html_path=None):
                 
                 it_table = copy.deepcopy(item)
                 it_table['entries'] = [e]
-                # Parsers may set _standalone_name on an entry to override the card title
                 if e.get('_standalone_name'):
                     it_table['name'] = e['_standalone_name']
                 expanded_items.append(it_table)
@@ -995,7 +925,6 @@ def generate_html(payload, output_html_path=None):
 
     condensed_items = expanded_items
 
-    # --- STATS GATHERING ---
     unique_item_count = len(condensed_items)
     type_counts = {}
     for item in condensed_items:
@@ -1003,7 +932,6 @@ def generate_html(payload, output_html_path=None):
         if not t:
             t = str(item.get('_data_type', 'Unknown')).capitalize()
         type_counts[t] = type_counts.get(t, 0) + 1
-    # -----------------------
 
     final_condensed_items = []
     for item in condensed_items:
@@ -1149,7 +1077,7 @@ def generate_html(payload, output_html_path=None):
             .border-0 {{ border: none !important; }}
             .col-2 {{ width: 16.666% !important; }}
             
-            .header-divider {{ display: block; width: min(2in, 100%); max-width: 2in !important; height: 10px !important; flex-shrink: 0; margin: 6px auto; background-color: var(--primary); mask-image: url('{DIVIDER_URI}'); -webkit-mask-image: url('{DIVIDER_URI}'); mask-size: 100% 100%; -webkit-mask-size: 100% 100%; mask-repeat: no-repeat; -webkit-mask-repeat: no-repeat; mask-position: center; -webkit-mask-position: center; }}
+            .header-divider {{ display: block; width: min(2in, 100%); max-width: 2in !important; height: 10px !important; flex-shrink: 0; margin: 6px auto; background-color: var(--primary); mask-image: var(--divider-uri); -webkit-mask-image: var(--divider-uri); mask-size: 100% 100%; -webkit-mask-size: 100% 100%; mask-repeat: no-repeat; -webkit-mask-repeat: no-repeat; mask-position: center; -webkit-mask-position: center; }}
             .card-footer {{ display: flex; flex-direction: column; margin-top: auto; padding-top: 6px; color: var(--primary); font-size: 8px; font-weight: bold; z-index: 1; border-top: 1px solid transparent; }}
         </style>
     </head><body>"""]
@@ -1185,8 +1113,6 @@ def generate_html(payload, output_html_path=None):
             page_str = f"p.{item.get('page', '')}" if item.get('page') else ""
             src_str = f"{item.get('source', 'UNK')} {page_str}".strip()
 
-            # Dispatch to dtype-specific footer renderer if one is registered.
-            # The items parser (sentinel key '_items') handles cost and weight.
             _dtype = item.get('_data_type', '')
             _footer_renderer = FOOTER_RENDERERS.get(_dtype) or FOOTER_RENDERERS.get('_items')
             cost_str, weight_str = ('', '')
@@ -1202,29 +1128,52 @@ def generate_html(payload, output_html_path=None):
             if cost_str or weight_str:
                 footer_html += f'<div style="display: flex; justify-content: space-between; width: 100%;"><span>{cost_str}</span><span>{weight_str}</span></div>'
             
-            # Centralized Icon Resolution
             icon_name = resolve_card_icon_name(item, item.get('_origin_file', 'items.json'))
             iur = load_svg_as_data_uri(f"{icon_name}.svg")
-
-            # Fail-safe fallback to the triangle glyph if the icon file is missing
-            if not iur:
-                iur = load_svg_as_data_uri("action-triangle-glyph.svg")
+            if not iur: iur = ""
                 
-            # Centralized Watermark Resolution
-            watermark_name = resolve_watermark_name(item, item.get('_origin_file', 'items.json'))
-            wur = load_svg_as_data_uri(f"{watermark_name}.svg")
+            div_name = resolve_divider_name(item, item.get('_origin_file', 'items.json'))
+            div_uri = load_svg_as_data_uri(f"{div_name}.svg")
+            if not div_uri: div_uri = ""
+                
+            # Override watermark (Priority: 1. Uploaded, 2. Selected from UI Dropdown, 3. Dynamic Icons.py)
+            wur = custom_assets.get('watermark')
             if not wur:
-                wur = load_svg_as_data_uri("watermark-emblem.svg")
+                sel_wm = selected_assets.get('watermark')
+                if sel_wm and sel_wm != 'Default':
+                    wur = load_svg_as_data_uri(sel_wm)
+                    
+                if not wur:
+                    watermark_name = resolve_watermark_name(item, item.get('_origin_file', 'items.json'))
+                    wur = load_svg_as_data_uri(f"{watermark_name}.svg")
+                    if not wur: wur = ""
                 
-            # Centralized Background Resolution
-            bg_name = resolve_background_name(item, item.get('_origin_file', 'items.json'))
-            bg_uri = load_svg_as_data_uri(f"{bg_name}.svg", force_stretch=True)
+            # Override background (Priority: 1. Uploaded, 2. Selected from UI Dropdown, 3. Dynamic Icons.py)
+            bg_uri = custom_assets.get('background')
+            if bg_uri and bg_uri.startswith('data:image/svg+xml;base64,'):
+                try:
+                    b64_data = bg_uri.split(',', 1)[1]
+                    svg_str = base64.b64decode(b64_data).decode('utf-8')
+                    if 'preserveAspectRatio' not in svg_str:
+                        svg_str = re.sub(r'<svg ', '<svg preserveAspectRatio="none" ', svg_str, count=1)
+                        encoded = base64.b64encode(svg_str.encode("utf-8")).decode("utf-8")
+                        bg_uri = f"data:image/svg+xml;base64,{encoded}"
+                except Exception:
+                    pass
+
             if not bg_uri:
-                bg_uri = load_svg_as_data_uri("parchment-background.svg", force_stretch=True)
+                sel_bg = selected_assets.get('background')
+                if sel_bg and sel_bg != 'Default':
+                    bg_uri = load_svg_as_data_uri(sel_bg, force_stretch=True)
+                    
+                if not bg_uri:
+                    bg_name = resolve_background_name(item, item.get('_origin_file', 'items.json'))
+                    bg_uri = load_svg_as_data_uri(f"{bg_name}.svg", force_stretch=True)
+                    if not bg_uri: bg_uri = ""
             
             html_content.append(f"""
             <div class="card-slot">
-                <div class="card {oc}" style="--primary: {pc}; --bg: {bc}; --icon-uri: url('{iur}'); --watermark-uri: url('{wur}'); --bg-uri: url('{bg_uri}');">
+                <div class="card {oc}" style="--primary: {pc}; --bg: {bc}; --icon-uri: url('{iur}'); --watermark-uri: url('{wur}'); --bg-uri: url('{bg_uri}'); --divider-uri: url('{div_uri}');">
                     <div class="header">
                         <div class="icon"></div>
                         <div class="title-box">
@@ -1291,3 +1240,62 @@ def generate_html(payload, output_html_path=None):
         "item_count": unique_item_count,
         "type_counts": type_counts
     }
+
+def generate_backs_html(payload, output_html_path="Custom_Deck_Backs.html"):
+    custom_assets = payload.get('customAssets', {})
+    selected_assets = payload.get('selectedAssets', {})
+    
+    # Priority 1: Custom Override Upload
+    cb_uri = custom_assets.get('cardBack')
+    if cb_uri and cb_uri.startswith('data:image/svg+xml;base64,'):
+        try:
+            b64_data = cb_uri.split(',', 1)[1]
+            svg_str = base64.b64decode(b64_data).decode('utf-8')
+            if 'preserveAspectRatio' not in svg_str:
+                svg_str = re.sub(r'<svg ', '<svg preserveAspectRatio="none" ', svg_str, count=1)
+                encoded = base64.b64encode(svg_str.encode("utf-8")).decode("utf-8")
+                cb_uri = f"data:image/svg+xml;base64,{encoded}"
+        except Exception:
+            pass
+            
+    # Priority 2 & 3: Dropdown Option -> Dynamic fallback
+    if not cb_uri:
+        sel_cb = selected_assets.get('cardBack')
+        if sel_cb and sel_cb != 'Default':
+            cb_uri = load_svg_as_data_uri(sel_cb, force_stretch=True)
+            
+        if not cb_uri:
+            cb_name = resolve_card_back_name(payload)
+            cb_uri = load_svg_as_data_uri(f"{cb_name}.svg", force_stretch=True)
+            if not cb_uri: cb_uri = ""
+        
+    html_content = [f"""
+    <!DOCTYPE html>
+    <html lang="en">
+    <head><meta charset="UTF-8"><title>Custom D&D Deck Backs</title>
+        <style>
+            * {{ box-sizing: border-box; }}
+            body {{ background-color: #2b2b2b; margin: 0; padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}
+            @media print {{ body {{ background-color: white; padding: 0; }} @page {{ size: letter; margin: 0; }} }}
+            .page {{ width: 8.5in; height: 11in; display: grid; grid-template-columns: repeat(3, 2.5in); grid-template-rows: repeat(3, 3.5in); margin: 0 auto; padding: 0.25in 0.5in; background-color: white; page-break-after: always; }}
+            .card-slot {{ width: 2.5in; height: 3.5in; display: flex; align-items: center; justify-content: center; }}
+            .card-back {{ width: 100%; height: 100%; background-image: url('{cb_uri}'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center; border-radius: 8px; overflow: hidden; }}
+        </style>
+    </head>
+    <body>
+        <div class="page">
+    """]
+    
+    for _ in range(9):
+        html_content.append(f"""
+            <div class="card-slot">
+                <div class="card-back"></div>
+            </div>
+        """)
+        
+    html_content.append("</div></body></html>")
+    
+    with open(output_html_path, 'w', encoding='utf-8') as f:
+        f.write("\n".join(html_content))
+        
+    return True

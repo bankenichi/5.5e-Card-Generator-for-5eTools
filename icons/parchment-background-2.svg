@@ -1,0 +1,45 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 750 1050" width="2.5in" height="3.5in">
+  <defs>
+    <radialGradient id="v2-vignette" cx="50%" cy="50%" r="70%">
+      <stop offset="0%"   stop-color="#d8c8a0" stop-opacity="0"/>
+      <stop offset="100%" stop-color="#6b5230" stop-opacity="0.65"/>
+    </radialGradient>
+    <radialGradient id="v2-center" cx="48%" cy="38%" r="55%">
+      <stop offset="0%"   stop-color="#f5edd8" stop-opacity="0.7"/>
+      <stop offset="100%" stop-color="#b8986a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="v2-corner-tl" cx="0%" cy="0%" r="60%">
+      <stop offset="0%"   stop-color="#8a6838" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#c8a86a" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="v2-corner-br" cx="100%" cy="100%" r="60%">
+      <stop offset="0%"   stop-color="#7a5828" stop-opacity="0.3"/>
+      <stop offset="100%" stop-color="#c8a86a" stop-opacity="0"/>
+    </radialGradient>
+    <filter id="v2-noise" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.65 0.5" numOctaves="5" seed="9" stitchTiles="stitch" result="n"/>
+      <feColorMatrix type="saturate" values="0" in="n" result="gn"/>
+      <feBlend in="SourceGraphic" in2="gn" mode="multiply" result="b"/>
+      <feComposite in="b" in2="SourceGraphic" operator="in"/>
+    </filter>
+  </defs>
+  <!-- Base: cooler, slightly greyer parchment -->
+  <rect width="750" height="1050" rx="24" fill="#d4c28e"/>
+  <rect width="750" height="1050" rx="24" fill="#c2a85c" opacity="0.2"/>
+  <rect width="750" height="1050" rx="24" fill="url(#v2-center)"/>
+  <rect width="750" height="1050" rx="24" fill="url(#v2-corner-tl)"/>
+  <rect width="750" height="1050" rx="24" fill="url(#v2-corner-br)"/>
+  <rect width="750" height="1050" rx="24" fill="url(#v2-vignette)"/>
+  <rect width="750" height="1050" rx="24" fill="#a88040" opacity="0.09" filter="url(#v2-noise)"/>
+  <!-- Borders: double rule, slightly more prominent -->
+  <rect x="16" y="16" width="718" height="1018" rx="20" fill="none" stroke="#6b5230" stroke-width="4" opacity="0.6"/>
+  <rect x="26" y="26" width="698" height="998"  rx="16" fill="none" stroke="#6b5230" stroke-width="1.6" opacity="0.35"/>
+  <rect x="34" y="34" width="682" height="982"  rx="13" fill="none" stroke="#6b5230" stroke-width="0.7" opacity="0.18"/>
+  <!-- Heavier age staining - irregular patches -->
+  <ellipse cx="80"  cy="100" rx="55" ry="30" fill="#9a7030" opacity="0.1"/>
+  <ellipse cx="680" cy="200" rx="40" ry="20" fill="#8a6020" opacity="0.09"/>
+  <ellipse cx="700" cy="900" rx="60" ry="35" fill="#7a5820" opacity="0.1"/>
+  <ellipse cx="60"  cy="850" rx="45" ry="25" fill="#9a7030" opacity="0.08"/>
+  <ellipse cx="380" cy="1020" rx="80" ry="18" fill="#806020" opacity="0.07"/>
+  <ellipse cx="375" cy="30"   rx="70" ry="14" fill="#806020" opacity="0.06"/>
+</svg>
