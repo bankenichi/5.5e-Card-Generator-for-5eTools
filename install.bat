@@ -18,7 +18,7 @@ set "GIT_URL=https://github.com/git-for-windows/git/releases/download/v2.45.2.wi
 set "GIT_EXE=%GIT_DIR%\bin\git.exe"
 
 echo.
-echo [1/5] Checking for Git...
+echo [0/4] Checking for Git...
 git --version >nul 2>&1
 if !ERRORLEVEL! EQU 0 (
     echo Git is already installed on this system.
@@ -61,7 +61,7 @@ if !ERRORLEVEL! EQU 0 (
 )
 
 echo.
-echo [2/5] Setting up standalone Python environment...
+echo [1/4] Setting up standalone Python environment...
 IF NOT EXIST "%PYTHON_DIR%\python.exe" (
     echo Downloading Portable Python 3.14...
     powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('%PYTHON_URL%', '%PYTHON_ZIP%')"
@@ -99,8 +99,8 @@ IF NOT EXIST "%PYTHON_DIR%\python.exe" (
 )
 
 echo.
-echo [3/5] Downloading Generator files...
-IF NOT EXIST "card_engine.py" (
+echo [2/4] Downloading Generator files...
+IF NOT EXIST ".git" (
     echo Cloning 5.5e Card Generator repository...
     "%GIT_CMD%" clone https://github.com/bankenichi/5.5e-Card-Generator-for-5eTools temp_gen
     IF !ERRORLEVEL! NEQ 0 (
@@ -109,15 +109,15 @@ IF NOT EXIST "card_engine.py" (
         exit /b 1
     )
     echo Moving files to main directory...
-    rmdir /s /q "temp_gen\.git" 2>nul
-    xcopy /s /e /y "temp_gen\*" "%CD%\" >nul
-    rmdir /s /q "temp_gen"
+    :: Use robocopy to move all files including hidden .git folder, then clean up temp shell
+    robocopy "temp_gen" "%CD%" /e /move /xd "%CD%\python-env" "%CD%\git-portable" "%CD%\generators" >nul
+    rmdir /s /q "temp_gen" 2>nul
 ) ELSE (
     echo Generator files already present.
 )
 
 echo.
-echo [4/5] Installing dependencies...
+echo [3/4] Installing dependencies...
 IF EXIST "requirements.txt" (
     "%PYTHON_DIR%\python.exe" -m pip install --upgrade pip >nul 2>&1
     "%PYTHON_DIR%\python.exe" -m pip install -r requirements.txt
@@ -126,7 +126,7 @@ IF EXIST "requirements.txt" (
 )
 
 echo.
-echo [5/5] Setting up 5etools dataset...
+echo [4/4] Setting up 5etools dataset...
 IF NOT EXIST "generators" mkdir generators
 IF NOT EXIST "generators\5etools" (
     echo Cloning 5etools repository...
@@ -139,6 +139,9 @@ IF NOT EXIST "generators\5etools" (
 ) ELSE (
     echo 5etools repository already exists.
 )
+
+:: Write sentinel file so launcher knows install completed successfully
+echo %DATE% %TIME% > install.lock
 
 echo.
 echo ==============================================

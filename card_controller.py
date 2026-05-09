@@ -59,6 +59,7 @@ def get_index_html(svg_options_json):
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg">
     <title>Card Generator Launcher</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 2rem; background: #f4f4f4; color: #111; }
