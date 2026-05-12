@@ -37,7 +37,7 @@ Whether you need spell cards, item cards, class features, or bastion rules, this
 
 ##  Installation
 
-This tool is designed to run on **Windows** and requires an active internet connection for the initial setup. You can run **`card_controller.py`** directly if youd rather go through it manually. That will require you to clone the 5eTools dataset repo manually in the generators root folder. 
+This tool is designed to run on **Windows** and requires an active internet connection for the initial setup. You can run **`card_controller.py`** directly if you'd rather go through it manually. That will require you to clone the 5eTools dataset repo manually in the generators root folder. 
 
 1. Download **`install.bat`** (skip to step 3 if downloading just the installer) or the latest release from the [Releases](https://github.com/bankenichi/5.5e-Card-Generator-for-5eTools/releases) page, or download the repository directly.
 2. Extract the folder to your desired location (e.g., your Documents folder).
