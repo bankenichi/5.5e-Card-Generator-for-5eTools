@@ -283,13 +283,12 @@ def build_optional_feature_entry(opt):
     }
 
 
-def resolve_feature_entries(entries, opt_index):
+def resolve_feature_entries(entries, opt_index, all_features=None):
     """
-    Recursively walks a feature's entries list and resolves any
-    'type: options' blocks that contain 'type: refOptionalfeature' refs.
-
-    The resolved optional features are inlined in place of the options block,
-    sorted alphabetically by name.
+    Recursively walks a feature's entries list and resolves:
+    1. 'type: options' blocks with 'refOptionalfeature'
+    2. 'type: refSubclassFeature' references (inlined)
+    3. 'type: refClassFeature' references (inlined)
     """
     if not isinstance(entries, list):
         return entries
@@ -300,8 +299,9 @@ def resolve_feature_entries(entries, opt_index):
             result.append(entry)
             continue
 
-        if entry.get('type') == 'options':
-            # Collect and resolve all refOptionalfeature refs in this block
+        e_type = entry.get('type')
+
+        if e_type == 'options':
             resolved_opts = []
             for sub in entry.get('entries', []):
                 if isinstance(sub, dict) and sub.get('type') == 'refOptionalfeature':
@@ -315,13 +315,62 @@ def resolve_feature_entries(entries, opt_index):
                 for opt in resolved_opts:
                     result.append(build_optional_feature_entry(opt))
             else:
-                # No refs resolved — keep the original block as-is
+                result.append(entry)
+
+        elif e_type in ('refSubclassFeature', 'refClassFeature') and all_features:
+            is_subclass_ref = e_type == 'refSubclassFeature'
+            ref_str = entry.get('subclassFeature') if is_subclass_ref else entry.get('classFeature', '')
+
+            parts = ref_str.split('|')
+            ref_name = parts[0].strip().lower()
+            ref_class = parts[1].strip().lower() if len(parts) > 1 else ""
+
+            ref_subclass = ""
+            ref_source = ""
+
+            # Robustly parse 5etools pipe syntax
+            if is_subclass_ref:
+                ref_subclass = parts[3].strip().lower() if len(parts) > 3 else ""
+                if len(parts) >= 7 and parts[6].strip():
+                    ref_source = parts[6].strip().upper()
+                elif len(parts) >= 5 and parts[4].strip():
+                    ref_source = parts[4].strip().upper()
+            else:
+                if len(parts) >= 5 and parts[4].strip():
+                    ref_source = parts[4].strip().upper()
+                elif len(parts) >= 3 and parts[2].strip():
+                    ref_source = parts[2].strip().upper()
+
+            target = None
+            for f in all_features:
+                if f.get('_data_type') == ('subclassFeature' if is_subclass_ref else 'classFeature'):
+                    f_name = str(f.get('name', '')).strip().lower()
+                    f_source = str(f.get('source', '')).strip().upper()
+
+                    if f_name == ref_name and (not ref_source or f_source == ref_source):
+                        f_class = str(f.get('className', '')).strip().lower()
+                        if ref_class and f_class != ref_class: continue
+
+                        if is_subclass_ref:
+                            f_subclass = str(f.get('subclassShortName', '')).strip().lower()
+                            if ref_subclass and f_subclass != ref_subclass: continue
+
+                        target = f
+                        break
+
+            if target:
+                resolved_inner = resolve_feature_entries(target.get('entries', []), opt_index, all_features)
+                result.append({
+                    "type": "item",
+                    "name": target.get('name'),
+                    "entries": resolved_inner
+                })
+            else:
                 result.append(entry)
 
         elif 'entries' in entry:
-            # Recurse into nested entry blocks
             new_entry = copy.deepcopy(entry)
-            new_entry['entries'] = resolve_feature_entries(entry['entries'], opt_index)
+            new_entry['entries'] = resolve_feature_entries(entry['entries'], opt_index, all_features)
             result.append(new_entry)
 
         else:
@@ -539,11 +588,9 @@ def enrich_class(item, type_map=None, all_raw=None):
         'int': 'Intelligence', 'wis': 'Wisdom', 'cha': 'Charisma'
     }
 
-    # Archetype is already injected by the PRE_FILTER_HOOK; preserve it.
     if 'archetype' not in result:
         result['archetype'] = determine_class_archetypes(item, all_raw)
 
-    # 1. Primary Ability
     pa_list = result.get('primaryAbility', [])
     pa_strs = []
 
@@ -571,7 +618,6 @@ def enrich_class(item, type_map=None, all_raw=None):
     if pa_strs:
         entries.append({"type": "item", "name": "Primary Ability", "entry": " and ".join(pa_strs)})
 
-    # 2. Hit Dice / Hit Points
     hd = result.get('hd', {})
     if hd:
         entries.append({"type": "item", "name": "Hit Dice",
@@ -582,13 +628,11 @@ def enrich_class(item, type_map=None, all_raw=None):
                         "entry": (f"1d{hd.get('faces', 8)} (or {hd.get('faces', 8) // 2 + 1})"
                                   f" + your Constitution modifier per {name} level after 1st")})
 
-    # 3. Saving Throws
     saves = result.get('proficiency', [])
     if saves:
         save_strs = [ABILITY_MAP.get(s, s.capitalize()) for s in saves]
         entries.append({"type": "item", "name": "Saving Throw Proficiencies", "entry": ", ".join(save_strs)})
 
-    # 4. Starting Proficiencies
     prof = result.get('startingProficiencies', {})
     if prof:
         entries.append({"type": "nested_header", "name": "Proficiencies"})
@@ -605,29 +649,51 @@ def enrich_class(item, type_map=None, all_raw=None):
             entries.append({"type": "item", "name": "Skills",
                             "entry": safe_join_proficiencies(prof['skills'], "skills")})
 
-    # 5. Class Tables (progression + spellcasting)
     entries.extend(process_class_tables(item, is_subclass=False))
 
-    # 6. Fetch and Append Class Features
+    # 6. Fetch and Append Class Features via direct ordered array mapping
     if all_raw:
         class_name = str(result.get('name', '')).lower().strip()
         class_source = str(result.get('source', '')).upper().strip()
 
-        features = [
-            f for f in all_raw
-            if f.get('_data_type') == 'classFeature'
-            and str(f.get('className', '')).lower().strip() == class_name
-            and str(f.get('classSource', '')).upper().strip() == class_source
-        ]
-        features.sort(key=lambda x: int(x.get('level', 0)))
+        class_features_refs = result.get('classFeatures', [])
 
-        for f in features:
-            feature_entries = resolve_feature_entries(f.get('entries', []), opt_index)
-            entries.append({
-                "type": "item",
-                "name": f"{f.get('name')} (Level {f.get('level')})",
-                "entries": feature_entries
-            })
+        for ref in class_features_refs:
+            ref_str = ref if isinstance(ref, str) else ref.get('classFeature', '')
+            if not ref_str: continue
+
+            parts = ref_str.split('|')
+            ref_name = parts[0].strip().lower()
+            ref_source = ""
+
+            if len(parts) >= 5 and parts[4].strip():
+                ref_source = parts[4].strip().upper()
+            elif len(parts) >= 3 and parts[2].strip():
+                ref_source = parts[2].strip().upper()
+
+            level = 0
+            if len(parts) >= 4 and parts[3].isdigit():
+                level = int(parts[3])
+
+            target = None
+            for f in all_raw:
+                if f.get('_data_type') == 'classFeature':
+                    f_name = str(f.get('name', '')).strip().lower()
+                    f_source = str(f.get('source', '')).strip().upper()
+
+                    if f_name == ref_name and (not ref_source or f_source == ref_source):
+                        if str(f.get('className', '')).lower().strip() == class_name and \
+                                str(f.get('classSource', '')).upper().strip() == class_source:
+                            target = f
+                            break
+
+            if target:
+                feature_entries = resolve_feature_entries(target.get('entries', []), opt_index, all_raw)
+                entries.append({
+                    "type": "item",
+                    "name": f"{target.get('name')} (Level {level})",
+                    "entries": feature_entries
+                })
 
     result['entries'] = entries
     result['meta_left'] = "Class Overview"
@@ -646,37 +712,54 @@ def enrich_subclass(item, type_map=None, all_raw=None):
 
     opt_index = build_optional_feature_index(all_raw) if all_raw else {}
 
-    # Archetype is already injected by the PRE_FILTER_HOOK; preserve it.
     if 'archetype' not in result:
         result['archetype'] = determine_subclass_archetypes(item, all_raw)
 
-    # 1. Subclass Specific Tables
     entries.extend(process_class_tables(item, is_subclass=True))
 
-    # 2. Fetch and Append Subclass Features
+    # 2. Fetch and Append Subclass Features via direct ordered array mapping
     if all_raw:
         subclass_short_name = str(result.get('shortName', '')).lower().strip()
-        subclass_source = str(result.get('source', '')).upper().strip()
         class_name = str(result.get('className', '')).lower().strip()
-        class_source = str(result.get('classSource', '')).upper().strip()
 
-        features = [
-            f for f in all_raw
-            if f.get('_data_type') == 'subclassFeature'
-            and str(f.get('subclassShortName', '')).lower().strip() == subclass_short_name
-            and str(f.get('subclassSource', '')).upper().strip() == subclass_source
-            and str(f.get('className', '')).lower().strip() == class_name
-            and str(f.get('classSource', '')).upper().strip() == class_source
-        ]
-        features.sort(key=lambda x: int(x.get('level', 0)))
+        subclass_features_refs = result.get('subclassFeatures', [])
 
-        for f in features:
-            feature_entries = resolve_feature_entries(f.get('entries', []), opt_index)
-            entries.append({
-                "type": "item",
-                "name": f"{f.get('name')} (Level {f.get('level')})",
-                "entries": feature_entries
-            })
+        for ref in subclass_features_refs:
+            ref_str = ref if isinstance(ref, str) else ref.get('subclassFeature', '')
+            if not ref_str: continue
+
+            parts = ref_str.split('|')
+            ref_name = parts[0].strip().lower()
+            ref_source = ""
+
+            if len(parts) >= 7 and parts[6].strip():
+                ref_source = parts[6].strip().upper()
+            elif len(parts) >= 5 and parts[4].strip():
+                ref_source = parts[4].strip().upper()
+
+            level = 0
+            if len(parts) >= 6 and parts[5].isdigit():
+                level = int(parts[5])
+
+            target = None
+            for f in all_raw:
+                if f.get('_data_type') == 'subclassFeature':
+                    f_name = str(f.get('name', '')).strip().lower()
+                    f_source = str(f.get('source', '')).strip().upper()
+
+                    if f_name == ref_name and (not ref_source or f_source == ref_source):
+                        if str(f.get('className', '')).lower().strip() == class_name and \
+                                str(f.get('subclassShortName', '')).lower().strip() == subclass_short_name:
+                            target = f
+                            break
+
+            if target:
+                f_entries = resolve_feature_entries(target.get('entries', []), opt_index, all_raw)
+                entries.append({
+                    "type": "item",
+                    "name": f"{target.get('name')} (Level {level})",
+                    "entries": f_entries
+                })
 
     result['entries'] = entries
     result['meta_left'] = f"{parent_class} Subclass"
