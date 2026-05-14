@@ -5,6 +5,7 @@ import subprocess
 import zipfile
 import shutil
 import webbrowser
+import io
 from http.server import SimpleHTTPRequestHandler, HTTPServer
 from urllib.parse import urlparse, parse_qs
 
@@ -37,41 +38,35 @@ def setup_from_git(repo_url):
     except Exception as e:
         return False, f"Git clone failed: {str(e)}"
 
-def setup_from_zip(zip_path):
-    if not os.path.exists(zip_path):
-        return False, "ZIP file not found."
-    
+def extract_zip_data(zip_bytes):
     if os.path.exists(DATA_DIR):
         shutil.rmtree(DATA_DIR)
     os.makedirs(DATA_DIR, exist_ok=True)
     
     try:
-        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-            # Check if there's a top-level folder in the zip
-            top_level_folders = {os.path.split(n)[0] for n in zip_ref.namelist() if '/' in n}
-            
-            # Simple heuristic: if most files are inside a single folder, extract that folder's contents
+        with zipfile.ZipFile(io.BytesIO(zip_bytes), 'r') as zip_ref:
             members = zip_ref.namelist()
-            if members:
-                first_part = members[0].split('/')[0]
-                if all(m.startswith(first_part + '/') for m in members):
-                    # Extract and move
-                    temp_extract = os.path.join(GENERATORS_DIR, "temp_zip")
-                    zip_ref.extractall(temp_extract)
-                    src_path = os.path.join(temp_extract, first_part)
-                    for item in os.listdir(src_path):
-                        shutil.move(os.path.join(src_path, item), DATA_DIR)
-                    shutil.rmtree(temp_extract)
-                else:
-                    zip_ref.extractall(DATA_DIR)
+            if not members:
+                return False, "ZIP file is empty."
+
+            # Heuristic: if all files are inside a single folder, extract that folder's contents
+            first_part = members[0].split('/')[0]
+            if all(m.startswith(first_part + '/') for m in members if '/' in m):
+                temp_extract = os.path.join(GENERATORS_DIR, "temp_zip")
+                if os.path.exists(temp_extract): shutil.rmtree(temp_extract)
+                zip_ref.extractall(temp_extract)
+                src_path = os.path.join(temp_extract, first_part)
+                for item in os.listdir(src_path):
+                    shutil.move(os.path.join(src_path, item), DATA_DIR)
+                shutil.rmtree(temp_extract)
+            else:
+                zip_ref.extractall(DATA_DIR)
             
         return True, "Successfully extracted ZIP."
     except Exception as e:
         return False, f"ZIP extraction failed: {str(e)}"
 
 def is_data_ready():
-    # Check for critical paths
-    # We expect generators/data/data/class and generators/data/data/spells
     class_dir = os.path.join(DATA_DIR, "data", "class")
     spells_dir = os.path.join(DATA_DIR, "data", "spells")
     return os.path.isdir(class_dir) and os.path.isdir(spells_dir)
@@ -115,10 +110,10 @@ HTML_TEMPLATE = """<!DOCTYPE html>
             <hr>
             
             <div class="form-group">
-                <label>Option 2: Extract from Local ZIP</label>
-                <input type="text" id="zip-path" placeholder="C:\\path\\to\\data.zip">
-                <p class="help-text">Enter the full absolute path to a local ZIP file containing the data.</p>
-                <button class="btn btn-primary" onclick="setupZip()">Extract ZIP</button>
+                <label>Option 2: Upload Data ZIP</label>
+                <input type="file" id="zip-file" accept=".zip">
+                <p class="help-text">Select a ZIP file containing the compatible data structure.</p>
+                <button class="btn btn-primary" onclick="setupZip()">Upload and Extract</button>
             </div>
         </div>
 
@@ -152,24 +147,33 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         }
 
         async function setupZip() {
-            const path = document.getElementById('zip-path').value;
-            if (!path) return alert('Please enter a path');
-            setStatus('Extracting ZIP...', false);
-            const resp = await fetch('/setup?type=zip&path=' + encodeURIComponent(path));
-            const data = await resp.json();
-            if (data.success) {
-                location.reload();
-            } else {
-                setStatus(data.message, true);
+            const fileInput = document.getElementById('zip-file');
+            if (fileInput.files.length === 0) return alert('Please select a ZIP file');
+            
+            setStatus('Uploading and extracting ZIP...', false);
+            const formData = new FormData();
+            formData.append('zip', fileInput.files[0]);
+
+            try {
+                const resp = await fetch('/setup-zip', {
+                    method: 'POST',
+                    body: formData
+                });
+                const data = await resp.json();
+                if (data.success) {
+                    location.reload();
+                } else {
+                    setStatus(data.message, true);
+                }
+            } catch (e) {
+                setStatus('Upload failed: ' + e, true);
             }
         }
 
         async function launchGenerator() {
             setStatus('Launching generator... closing this tab.', false);
-            // Small delay to ensure the request is sent before the window closes
             fetch('/launch').then(() => {
                 window.close();
-                // Fallback for browsers that block window.close()
                 setTimeout(() => {
                     document.body.innerHTML = '<div class="panel"><h1>Launched</h1><p>The generator is running in a new window. You can close this tab.</p></div>';
                 }, 500);
@@ -204,15 +208,11 @@ class LauncherRequestHandler(SimpleHTTPRequestHandler):
         elif parsed.path == '/setup':
             params = parse_qs(parsed.query)
             stype = params.get('type', [''])[0]
-            success = False
-            message = ""
+            success, message = False, ""
             
             if stype == 'git':
                 url = params.get('url', [''])[0]
                 success, message = setup_from_git(url)
-            elif stype == 'zip':
-                path = params.get('path', [''])[0]
-                success, message = setup_from_zip(path)
                 
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
@@ -222,15 +222,10 @@ class LauncherRequestHandler(SimpleHTTPRequestHandler):
 
         elif parsed.path == '/launch':
             if is_data_ready():
-                # Shutdown this server and start card_controller.py
                 self.send_response(200)
                 self.end_headers()
                 self.wfile.write(b"Launching...")
-                
-                # Start card_controller in a new process
                 subprocess.Popen([sys.executable, "card_controller.py"])
-                
-                # Exit the launcher
                 os._exit(0)
             else:
                 self.send_response(403)
@@ -239,6 +234,36 @@ class LauncherRequestHandler(SimpleHTTPRequestHandler):
                 return
 
         super().do_GET()
+
+    def do_POST(self):
+        if self.path == '/setup-zip':
+            content_length = int(self.headers['Content-Length'])
+            boundary = self.headers['Content-Type'].split("=")[1].encode()
+            
+            # Very simple multipart parser for this specific use case
+            body = self.rfile.read(content_length)
+            parts = body.split(b'--' + boundary)
+            zip_bytes = b""
+            for part in parts:
+                if b'name="zip"' in part:
+                    # Find the start of the file content after the headers
+                    header_end = part.find(b'\\r\\n\\r\\n') + 4
+                    if header_end < 4: # Handle both CRLF and LF
+                        header_end = part.find(b'\\n\\n') + 2
+                    
+                    zip_bytes = part[header_end:].rstrip(b'\\r\\n').rstrip(b'\\n').rstrip(b'--')
+                    break
+            
+            if zip_bytes:
+                success, message = extract_zip_data(zip_bytes)
+            else:
+                success, message = False, "No ZIP data found in upload."
+
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({"success": success, "message": message}).encode('utf-8'))
+            return
 
 def serve_launcher(port=8001):
     server_address = ('', port)
