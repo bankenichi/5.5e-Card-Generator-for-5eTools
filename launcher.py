@@ -100,13 +100,15 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <body>
     <div class="panel">
         <h1>Welcome to TTRPG Card Generator</h1>
-        <p>It looks like you haven't set up your data source yet. This tool requires a dataset following the 5etools structure (containing a <code>data/</code> folder with <code>class/</code>, <code>spells/</code>, etc.).</p>
+        <div id="welcome-message" style="display: __WELCOME_DISPLAY__;">
+            <p>It looks like you haven't set up your data source yet. This tool requires a compatible dataset (containing a <code>data/</code> folder with <code>class/</code>, <code>spells/</code>, etc.).</p>
+        </div>
         
-        <div id="setup-form">
+        <div id="setup-form" style="display: __SETUP_DISPLAY__;">
             <div class="form-group">
                 <label>Option 1: Clone from Git Repository</label>
-                <input type="text" id="repo-url" placeholder="https://github.com/your-repo-name-here">
-                <p class="help-text">Enter the URL of a 5etools-compatible data repository.</p>
+                <input type="text" id="repo-url" placeholder="https://github.com/example/my-ttrpg-data.git">
+                <p class="help-text">Enter the URL of a compatible data repository.</p>
                 <button class="btn btn-primary" onclick="setupGit()">Clone Repository</button>
             </div>
             
@@ -163,16 +165,23 @@ HTML_TEMPLATE = """<!DOCTYPE html>
         }
 
         async function launchGenerator() {
-            window.location.href = '/launch';
+            setStatus('Launching generator... closing this tab.', false);
+            // Small delay to ensure the request is sent before the window closes
+            fetch('/launch').then(() => {
+                window.close();
+                // Fallback for browsers that block window.close()
+                setTimeout(() => {
+                    document.body.innerHTML = '<div class="panel"><h1>Launched</h1><p>The generator is running in a new window. You can close this tab.</p></div>';
+                }, 500);
+            });
         }
 
         function toggleSetup() {
             const f = document.getElementById('setup-form');
-            f.style.display = f.style.display === 'none' ? 'block' : 'none';
-        }
-
-        if (document.getElementById('launch-panel').style.display === 'block') {
-            document.getElementById('setup-form').style.display = 'none';
+            const w = document.getElementById('welcome-message');
+            const isHidden = f.style.display === 'none';
+            f.style.display = isHidden ? 'block' : 'none';
+            if (w) w.style.display = isHidden ? 'block' : 'none';
         }
     </script>
 </body>
@@ -184,6 +193,8 @@ class LauncherRequestHandler(SimpleHTTPRequestHandler):
         if parsed.path == '/':
             ready = is_data_ready()
             html = HTML_TEMPLATE.replace('__LAUNCH_DISPLAY__', 'block' if ready else 'none')
+            html = html.replace('__WELCOME_DISPLAY__', 'none' if ready else 'block')
+            html = html.replace('__SETUP_DISPLAY__', 'none' if ready else 'block')
             self.send_response(200)
             self.send_header('Content-Type', 'text/html')
             self.end_headers()
