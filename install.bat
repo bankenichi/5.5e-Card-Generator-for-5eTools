@@ -18,7 +18,7 @@ set "GIT_URL=https://github.com/git-for-windows/git/releases/download/v2.45.2.wi
 set "GIT_EXE=%GIT_DIR%\bin\git.exe"
 
 echo.
-echo [0/4] Checking for Git...
+echo [1/5] Checking for Git...
 git --version >nul 2>&1
 if !ERRORLEVEL! EQU 0 (
     echo Git is already installed on this system.
@@ -61,7 +61,7 @@ if !ERRORLEVEL! EQU 0 (
 )
 
 echo.
-echo [1/4] Setting up standalone Python environment...
+echo [2/5] Setting up standalone Python environment...
 IF NOT EXIST "%PYTHON_DIR%\python.exe" (
     echo Downloading Portable Python 3.14...
     powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('%PYTHON_URL%', '%PYTHON_ZIP%')"
@@ -99,7 +99,25 @@ IF NOT EXIST "%PYTHON_DIR%\python.exe" (
 )
 
 echo.
-echo [2/3] Installing dependencies...
+echo [3/5] Downloading Generator files...
+IF NOT EXIST ".git" (
+    echo Cloning TTRPG Card Generator repository...
+    "%GIT_CMD%" clone https://github.com/bankenichi/TTRPG-Card-Generator temp_gen
+    IF !ERRORLEVEL! NEQ 0 (
+        echo Failed to clone the generator repository!
+        pause
+        exit /b 1
+    )
+    echo Moving files to main directory...
+    :: Use robocopy to move all files including hidden .git folder, then clean up temp shell
+    robocopy "temp_gen" "%CD%" /e /move /xd "%CD%\python-env" "%CD%\git-portable" "%CD%\generators" >nul
+    rmdir /s /q "temp_gen" 2>nul
+) ELSE (
+    echo Generator files already present.
+)
+
+echo.
+echo [4/5] Installing dependencies...
 IF EXIST "requirements.txt" (
     "%PYTHON_DIR%\python.exe" -m pip install --upgrade pip >nul 2>&1
     "%PYTHON_DIR%\python.exe" -m pip install -r requirements.txt
@@ -108,7 +126,7 @@ IF EXIST "requirements.txt" (
 )
 
 echo.
-echo [3/3] Setting up Data Environment...
+echo [5/5] Setting up Data Environment...
 IF NOT EXIST "generators" mkdir generators
 
 :: Write sentinel file so launcher knows install completed successfully
