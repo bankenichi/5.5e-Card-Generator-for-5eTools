@@ -10,7 +10,7 @@ Whether you need spell cards, item cards, class features, or bastion rules, this
 | Backgrounds | 306 | 146 |
 | Bastions | 58 | 53 |
 | Bestiary | 4707 | 3720 |
-| Classes | 626 | 383 |
+| Classes | 609 | 383 |
 | Conditions | 44 | 44 |
 | Decks | 375 | 369 |
 | Deities | 464 | 322 |
@@ -23,7 +23,7 @@ Whether you need spell cards, item cards, class features, or bastion rules, this
 | Skills | 18 | 18 |
 | Spells | 570 | 553 |
 | Vehicles | 77 | 69 |
-| **Total** | **10153** | **8403** |
+| **Total** | **10136** | **8403** |
 
 ##  Features
 
