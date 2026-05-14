@@ -1037,7 +1037,7 @@ def generate_html(payload, output_html_path=None):
     html_content = [f"""
     <!DOCTYPE html>
     <html lang="en">
-    <head><meta charset="UTF-8"><title>Custom D&D Deck</title>
+    <head><meta charset="UTF-8"><title>Custom TTRPG Deck</title>
         <style>
             @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,400;0,700;1,400&display=swap');
             * {{ box-sizing: border-box; }}
@@ -1272,7 +1272,7 @@ def generate_backs_html(payload, output_html_path="Custom_Deck_Backs.html"):
     html_content = [f"""
     <!DOCTYPE html>
     <html lang="en">
-    <head><meta charset="UTF-8"><title>Custom D&D Deck Backs</title>
+    <head><meta charset="UTF-8"><title>Custom TTRPG Deck Backs</title>
         <style>
             * {{ box-sizing: border-box; }}
             body {{ background-color: #2b2b2b; margin: 0; padding: 20px; -webkit-print-color-adjust: exact; print-color-adjust: exact; }}

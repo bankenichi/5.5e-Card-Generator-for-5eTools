@@ -54,13 +54,21 @@ def get_available_svgs():
 # ---------------------------------------------------------------------------
 # CONTROLLER UI & SERVER
 # ---------------------------------------------------------------------------
+def get_datasets_json():
+    path = os.path.join(SCRIPT_DIR, "datasets.json")
+    if os.path.exists(path):
+        with open(path, 'r', encoding='utf-8') as f:
+            return f.read()
+    return "{}"
+
 def get_index_html(svg_options_json):
+    datasets_json = get_datasets_json()
     html = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg">
-    <title>Card Generator Launcher</title>
+    <title>TTRPG Card Generator Launcher</title>
     <style>
         body { font-family: Arial, sans-serif; margin: 2rem; background: #f4f4f4; color: #111; }
         .panel { max-width: 600px; margin: auto; padding: 1.5rem; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.08); }
@@ -107,7 +115,7 @@ def get_index_html(svg_options_json):
 </head>
 <body>
     <div class="panel">
-        <h1>Card Generator Controller</h1>
+        <h1>TTRPG Card Generator Controller</h1>
         <p>Select datasets and apply subset filters to generate a custom printable deck.</p>
         
         <div id="datasets-container"></div>
@@ -176,31 +184,7 @@ def get_index_html(svg_options_json):
             "MM": "Metamagic", "RP": "Renown Perks", "none": "None / Other", "yes": "Requires Attunement", "no": "No Attunement"
         };
 
-        const DATASETS = {
-            "Actions": { file: "generators/5etools/data/actions.json", filters: {} },
-            "Backgrounds": { file: "generators/5etools/data/backgrounds.json", filters: {} },
-            "Bastions": { file: "generators/5etools/data/bastions.json", filters: { level: ["5", "9", "13", "17"] } },
-            "Bestiary": { 
-                file: ["generators/5etools/data/bestiary/index.json", "generators/5etools/data/bestiary/legendarygroups.json", "generators/5etools/data/bestiary/template.json"],
-                filters: { cr: ["0", "1/8", "1/4", "1/2", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10", "11", "12", "13", "14", "15", "16", "17", "18", "19", "20", "21", "22", "23", "24", "25", "26", "27", "28", "29", "30"], size: ["T", "S", "M", "L", "H", "G", "C"], type: ["aberration", "beast", "celestial", "construct", "dragon", "elemental", "fey", "fiend", "giant", "humanoid", "monstrosity", "ooze", "plant", "undead"] }
-            },
-            "Classes": { 
-                file: ["generators/5etools/data/class/index.json", "generators/5etools/data/optionalfeatures.json"], 
-                filters: { name: ["Artificer", "Barbarian", "Bard", "Cleric", "Druid", "Fighter", "Monk", "Paladin", "Ranger", "Rogue", "Sorcerer", "Warlock", "Wizard"], archetype: ["Spellcaster", "Half-Caster", "Martial", "Gish / Subclass Caster"] } 
-            },
-            "Conditions / Diseases": { file: "generators/5etools/data/conditionsdiseases.json", filters: {} },
-            "Decks": { file: "generators/5etools/data/decks.json", filters: {} },
-            "Deities": { file: "generators/5etools/data/deities.json", filters: { pantheon: ["Celtic", "Dawn War", "Dragonlance", "Drow", "Duergar", "Dwarven", "Eberron", "Egyptian", "Elven", "Exandria", "Faerûnian", "Forgotten Realms", "Gnome", "Gnomish", "Greek", "Greyhawk", "Halfling", "Nonhuman", "Norse", "Orc", "Theros", "Yuan-ti"] } },
-            "Feats": { file: "generators/5etools/data/feats.json", filters: { category: ["General Feat", "Origin Feat", "Epic Boon", "Fighting Style"] } },
-            "Items": { file: "generators/5etools/data/items.json", filters: { rarity: ["common", "uncommon", "rare", "very rare", "legendary", "artifact", "none"], attunement: ["yes", "no"] } },
-            "Languages": { file: "generators/5etools/data/languages.json", filters: { type: ["Standard", "Rare"] } },
-            "Optional Features": { file: "generators/5etools/data/optionalfeatures.json", subtitle: "(Invocations, Infusions, Maneuvers, Fighting Styles, etc.)", filters: { featureType: ["EI", "AI", "AS", "ED", "FS:F", "RN", "PB", "MV:B", "MM", "RP"] } },
-            "Psionics": { file: "generators/5etools/data/psionics.json", filters: {} },
-            "Races": { file: "generators/5etools/data/races.json", filters: {} },
-            "Skills": { file: "generators/5etools/data/skills.json", filters: { ability: ["str", "dex", "con", "int", "wis", "cha"] } },
-            "Spells": { file: "generators/5etools/data/spells/index.json", filters: { level: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"], school: ["A", "C", "D", "E", "I", "N", "T", "V"], classes: ["Artificer", "Bard", "Cleric", "Druid", "Paladin", "Ranger", "Sorcerer", "Warlock", "Wizard"] } },
-            "Vehicles": { file: "generators/5etools/data/vehicles.json", filters: {} }
-        };
+        const DATASETS = __DATASETS_JSON__;
 
         const container = document.getElementById('datasets-container');
 
@@ -458,7 +442,7 @@ class GeneratorRequestHandler(SimpleHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-Type', 'text/html; charset=utf-8')
             self.end_headers()
-            self.wfile.write(get_index_html(svg_options).encode('utf-8'))
+            self.wfile.write(get_index_html(svg_options).replace('__DATASETS_JSON__', get_datasets_json()).encode('utf-8'))
             return
             
         # Custom route to serve the SVG previews from the icons folder reliably

@@ -8,3 +8,4 @@ test_error.py
 test_dict2.py
 test_dict.py
 install.lock
+/.idea/

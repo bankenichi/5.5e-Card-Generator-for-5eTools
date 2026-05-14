@@ -91,7 +91,7 @@ def merge_lists(dominant_list, secondary_list):
 # 4. Dynamically cache and merge everything into arrays using the Tiered Priority
 MASTER_STATS = {}
 try:
-    with open('generators/5etools/data/deities.json', 'r', encoding='utf-8') as f:
+    with open('generators/data/data/deities.json', 'r', encoding='utf-8') as f:
         _data = json.load(f)
         for _deity in _data.get('deity', []):
             _name = _deity.get('name')

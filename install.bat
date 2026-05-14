@@ -2,7 +2,7 @@
 setlocal enabledelayedexpansion
 
 echo ==============================================
-echo 5.5e Card Generator Installer
+echo TTRPG Card Generator Installer
 echo ==============================================
 
 :: Updated to target Python 3.14.1
@@ -99,25 +99,7 @@ IF NOT EXIST "%PYTHON_DIR%\python.exe" (
 )
 
 echo.
-echo [2/4] Downloading Generator files...
-IF NOT EXIST ".git" (
-    echo Cloning 5.5e Card Generator repository...
-    "%GIT_CMD%" clone https://github.com/bankenichi/5.5e-Card-Generator-for-5eTools temp_gen
-    IF !ERRORLEVEL! NEQ 0 (
-        echo Failed to clone the generator repository!
-        pause
-        exit /b 1
-    )
-    echo Moving files to main directory...
-    :: Use robocopy to move all files including hidden .git folder, then clean up temp shell
-    robocopy "temp_gen" "%CD%" /e /move /xd "%CD%\python-env" "%CD%\git-portable" "%CD%\generators" >nul
-    rmdir /s /q "temp_gen" 2>nul
-) ELSE (
-    echo Generator files already present.
-)
-
-echo.
-echo [3/4] Installing dependencies...
+echo [2/3] Installing dependencies...
 IF EXIST "requirements.txt" (
     "%PYTHON_DIR%\python.exe" -m pip install --upgrade pip >nul 2>&1
     "%PYTHON_DIR%\python.exe" -m pip install -r requirements.txt
@@ -126,19 +108,8 @@ IF EXIST "requirements.txt" (
 )
 
 echo.
-echo [4/4] Setting up 5etools dataset...
+echo [3/3] Setting up Data Environment...
 IF NOT EXIST "generators" mkdir generators
-IF NOT EXIST "generators\5etools" (
-    echo Cloning 5etools repository...
-    "%GIT_CMD%" clone https://github.com/5etools-mirror-3/5etools-src.git generators\5etools
-    IF !ERRORLEVEL! NEQ 0 (
-        echo Failed to clone 5etools! Please check your internet connection.
-        pause
-        exit /b 1
-    )
-) ELSE (
-    echo 5etools repository already exists.
-)
 
 :: Write sentinel file so launcher knows install completed successfully
 echo %DATE% %TIME% > install.lock
@@ -149,3 +120,4 @@ echo Setup Complete!
 echo You can now use "launch.bat" to start the generator.
 echo ==============================================
 pause
+start launch.bat
