@@ -76,7 +76,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <title>TTRPG Card Generator - Setup</title>
-    <link rel="icon" type="image/x-icon" href="/icons/favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg">
     <style>
         body { font-family: Arial, sans-serif; margin: 2rem; background: #f4f4f4; color: #111; }
         .panel { max-width: 600px; margin: auto; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.1); }
@@ -226,8 +226,15 @@ class LauncherRequestHandler(SimpleHTTPRequestHandler):
                 self.send_response(200)
                 self.end_headers()
                 self.wfile.write(b"Launching...")
-                subprocess.Popen([sys.executable, "card_controller.py"])
-                os._exit(0)
+                
+                # Small delay to ensure the browser receives the response before we shut down
+                import threading
+                import time
+                def delayed_launch():
+                    time.sleep(1)
+                    subprocess.Popen([sys.executable, "card_controller.py"])
+                    os._exit(0)
+                threading.Thread(target=delayed_launch).start()
             else:
                 self.send_response(403)
                 self.end_headers()

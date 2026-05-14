@@ -63,7 +63,7 @@ HTML_TEMPLATE = """<!DOCTYPE html>
 <head>
     <meta charset="UTF-8">
     <title>TTRPG Card Generator - Installation</title>
-    <link rel="icon" type="image/x-icon" href="/icons/favicon.ico">
+    <link rel="icon" type="image/svg+xml" href="/icons/favicon.svg">
     <style>
         body { font-family: Arial, sans-serif; margin: 2rem; background: #f4f4f4; color: #111; }
         .panel { max-width: 600px; margin: auto; padding: 2rem; background: white; border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,.1); }
@@ -168,9 +168,14 @@ class InstallerRequestHandler(SimpleHTTPRequestHandler):
                 self.end_headers()
                 self.wfile.write(json.dumps({"success": True}).encode('utf-8'))
                 
-                # Launch the launcher and exit
-                subprocess.Popen(["cmd", "/c", "launch.bat"], shell=True)
-                os._exit(0)
+                # Small delay to ensure the browser receives the response before we shut down
+                import threading
+                import time
+                def delayed_launch():
+                    time.sleep(1)
+                    subprocess.Popen(["cmd", "/c", "launch.bat"], shell=True)
+                    os._exit(0)
+                threading.Thread(target=delayed_launch).start()
             else:
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/json')
