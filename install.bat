@@ -18,7 +18,7 @@ set "GIT_URL=https://github.com/git-for-windows/git/releases/download/v2.45.2.wi
 set "GIT_EXE=%GIT_DIR%\bin\git.exe"
 
 echo.
-echo [1/5] Checking for Git...
+echo [1/4] Checking for Git...
 git --version >nul 2>&1
 if !ERRORLEVEL! EQU 0 (
     echo Git is already installed on this system.
@@ -38,7 +38,6 @@ if !ERRORLEVEL! EQU 0 (
 
         echo Extracting portable Git ^(this may take a moment^)...
         mkdir "%GIT_DIR%"
-        :: PortableGit self-extracts as a 7z SFX archive with a -o flag
         "%GIT_ZIP%" -o"%GIT_DIR%" -y >nul 2>&1
         IF !ERRORLEVEL! NEQ 0 (
             echo Failed to extract portable Git.
@@ -61,7 +60,7 @@ if !ERRORLEVEL! EQU 0 (
 )
 
 echo.
-echo [2/5] Setting up standalone Python environment...
+echo [2/4] Setting up standalone Python environment...
 IF NOT EXIST "%PYTHON_DIR%\python.exe" (
     echo Downloading Portable Python 3.14...
     powershell -Command "[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12; (New-Object Net.WebClient).DownloadFile('%PYTHON_URL%', '%PYTHON_ZIP%')"
@@ -74,10 +73,7 @@ IF NOT EXIST "%PYTHON_DIR%\python.exe" (
     del "%PYTHON_ZIP%"
 
     echo Enabling site-packages and local imports...
-    :: Uncomment import site in python314._pth to allow pip and external modules
     powershell -Command "(Get-Content '%PYTHON_DIR%\python314._pth') -replace '#import site', 'import site' | Set-Content '%PYTHON_DIR%\python314._pth'"
-    
-    :: Allow embedded python to read modules from the parent directory
     echo .. >> "%PYTHON_DIR%\python314._pth"
 
     echo Downloading get-pip.py...
@@ -85,21 +81,17 @@ IF NOT EXIST "%PYTHON_DIR%\python.exe" (
 
     echo Installing pip...
     "%PYTHON_DIR%\python.exe" get-pip.py
-    
-    echo Cleaning up get-pip.py...
     del get-pip.py
 ) ELSE (
     echo Standalone Python environment already exists.
-    :: Ensure the path fix exists even if Python was already installed
     findstr /c:".." "%PYTHON_DIR%\python314._pth" >nul
     if errorlevel 1 (
-        echo Adding local import path to existing Python environment...
         echo .. >> "%PYTHON_DIR%\python314._pth"
     )
 )
 
 echo.
-echo [3/5] Downloading Generator files...
+echo [3/4] Downloading Generator files...
 IF NOT EXIST ".git" (
     echo Cloning TTRPG Card Generator repository...
     "%GIT_CMD%" clone https://github.com/bankenichi/TTRPG-Card-Generator temp_gen
@@ -108,8 +100,7 @@ IF NOT EXIST ".git" (
         pause
         exit /b 1
     )
-    echo Moving files to main directory...
-    :: Use robocopy to move all files including hidden .git folder, then clean up temp shell
+    echo Moving files...
     robocopy "temp_gen" "%CD%" /e /move /xd "%CD%\python-env" "%CD%\git-portable" "%CD%\generators" >nul
     rmdir /s /q "temp_gen" 2>nul
 ) ELSE (
@@ -117,25 +108,5 @@ IF NOT EXIST ".git" (
 )
 
 echo.
-echo [4/5] Installing dependencies...
-IF EXIST "requirements.txt" (
-    "%PYTHON_DIR%\python.exe" -m pip install --upgrade pip >nul 2>&1
-    "%PYTHON_DIR%\python.exe" -m pip install -r requirements.txt
-) ELSE (
-    echo No requirements.txt found, checking standard libraries.
-)
-
-echo.
-echo [5/5] Setting up Data Environment...
-IF NOT EXIST "generators" mkdir generators
-
-:: Write sentinel file so launcher knows install completed successfully
-echo %DATE% %TIME% > install.lock
-
-echo.
-echo ==============================================
-echo Setup Complete!
-echo You can now use "launch.bat" to start the generator.
-echo ==============================================
-pause
-start launch.bat
+echo [4/4] Handing over to GUI Installer...
+"%PYTHON_DIR%\python.exe" gui_installer.py
