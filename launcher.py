@@ -235,6 +235,7 @@ class LauncherRequestHandler(SimpleHTTPRequestHandler):
                     subprocess.Popen([sys.executable, "card_controller.py"])
                     os._exit(0)
                 threading.Thread(target=delayed_launch).start()
+                return
             else:
                 self.send_response(403)
                 self.end_headers()
